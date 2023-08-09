@@ -81,7 +81,7 @@ Hiding service reachability. All major E2EE messaging services already publish u
 ## Key distribution
 
 
-![alt_text](images/kd_seq.png "Key distribution"){:height="838px" width="396px"}
+![alt_text](images/key_distribution.png "Key distribution"){:height="838px" width="396px"}
 
 
 Taking Platform1 client sending to a Platform2 user as an example:
@@ -108,7 +108,7 @@ This provides E2EE interop while only disclosing to gateway service which servic
 
 A similar architecture can be used for message delivery
 
-![alt_text](images/message_delivery.png "message delivery"){:height="1273px" width="396px"}
+![alt_text](images/message_delivery.png "message delivery"){:height="1331px" width="414px"}
 
 
 1. Platform1 name server replicates authoritative Platform2 NS records
