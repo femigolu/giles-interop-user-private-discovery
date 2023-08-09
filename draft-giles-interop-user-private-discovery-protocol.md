@@ -1,6 +1,5 @@
 ---
 
-
 title: "Interoperable Privacy Preserving User Identity and Discovery for E2EE Messaging"
 abbrev: "Interoperable Private User Discovery for E2EE Messaging"
 category: info
@@ -23,7 +22,6 @@ venue:
   arch: https://mailarchive.ietf.org/arch/browse/mimi/
   github: femigolu/giles-interop-user-private-discovery
   latest: https://femigolu.github.io/giles-interop-user-private-discovery/giles-interop-user-private-discovery-protocol.html
-
 author:
  -
     fullname: Giles Hogben
