@@ -29,7 +29,6 @@ author:
     fullname: Giles Hogben
     organization: Google
     email: gih@google.com
-
  -
     fullname: Femi Olumofin
     organization: Google
