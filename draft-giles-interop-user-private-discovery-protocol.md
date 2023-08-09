@@ -1,24 +1,6 @@
 ---
-###
-# Internet-Draft Markdown Template
-#
-# Rename this file from draft-todo-yourname-protocol.md to get started.
-# Draft name format is "draft-<yourname>-<workgroup>-<name>.md".
-#
-# For initial setup, you only need to edit the first block of fields.
-# Only "title" needs to be changed; delete "abbrev" if your title is short.
-# Any other content can be edited, but be careful not to introduce errors.
-# Some fields will be set automatically during setup if they are unchanged.
-#
-# Don't include "-00" or "-latest" in the filename.
-# Labels in the form draft-<yourname>-<workgroup>-<name>-latest are used by
-# the tools to refer to the current version; see "docname" for example.
-#
-# This template uses kramdown-rfc: https://github.com/cabo/kramdown-rfc
-# You can replace the entire file if you prefer a different format.
-# Change the file extension to match the format (.xml for XML, etc...)
-#
-###
+
+
 title: "Interoperable Privacy Preserving User Identity and Discovery for E2EE Messaging"
 abbrev: "Interoperable Private User Discovery for E2EE Messaging"
 category: info
@@ -99,7 +81,7 @@ Hiding service reachability. All major E2EE messaging services already publish u
 ## Key distribution
 
 
-![alt_text](images/kd_seq.png "Key distribution")
+![alt_text](images/kd_seq.png "Key distribution"){:height="838px" width="396px"}
 
 
 Taking Platform1 client sending to a Platform2 user as an example:
@@ -126,7 +108,7 @@ This provides E2EE interop while only disclosing to gateway service which servic
 
 A similar architecture can be used for message delivery
 
-![alt_text](images/message_delivery.png "message delivery")
+![alt_text](images/message_delivery.png "message delivery"){:height="1273px" width="396px"}
 
 
 1. Platform1 name server replicates authoritative Platform2 NS records
@@ -148,7 +130,7 @@ Each service is responsible for registering user enrollments with the resolver.
 While the preferred service is public, the user should control its value/integrity. Therefore to prevent anyone but the user modifying the default service value, records must be signed with the user’s private key and verified by the sender against their public key. For multiple key pairs across different services, the first key pair to sign the default service bit must be used to change the default.
 
 
-![alt_text](images/preferred_svc_integrity.png "Preferred service integrity")
+![alt_text](images/preferred_svc_integrity.png "Preferred service integrity"){:height="1005px" width="396px"}
 
 
 ## Cross-service identity spoofing
