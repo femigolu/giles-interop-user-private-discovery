@@ -1,10 +1,10 @@
 ---
 
-title: "Interoperable Privacy Preserving User Identity and Discovery for E2EE Messaging"
-abbrev: "Interoperable Private User Discovery for E2EE Messaging"
+title: "Interoperable Private Identity Discovery for E2EE Messaging"
+abbrev: "E2EE Messaging Private User Discovery"
 category: info
 
-docname: draft-giles-interop-user-private-discovery-protocol
+docname: draft-giles-interop-user-private-discovery-protocol-latest
 submissiontype: IETF
 number:
 date:
@@ -54,7 +54,7 @@ Outline of design for message delivery bridge and key distribution server discov
 For a given messaging service identity handle (Phone number or alphanumeric UserID):
 
 
-1. P0 Return receiver service ID to send message payload: can be mapped to endpoints for message delivery and key distribution using standard mechanism -> e.g. [Platform1.org/send/](matrix.org/send/), [Platform1.org/kds](matrix.org/kds) 
+1. P0 Return receiver service ID to send message payload: can be mapped to endpoints for message delivery and key distribution using standard mechanism -> e.g. [Platform1.org/send/](matrix.org/send/), [Platform1.org/kds](matrix.org/kds)
 
 2. P0 Return optional default receiver service ID user preference for a given PN/UserID (e.g. default:Platform1.org)
 
@@ -65,7 +65,7 @@ For a given messaging service identity handle (Phone number or alphanumeric User
 
 * P0 Resolver service should not learn the public identity of the querying client.
 
-* P0 Resolver service should not learn the exact timing of when a message is sent 
+* P0 Resolver service should not learn the exact timing of when a message is sent
 
 ## Privacy Non-requirement
 
@@ -77,13 +77,12 @@ Hiding service reachability. All major E2EE messaging services already publish u
 
 ## Key distribution
 
-
-~~~ plantuml-utxt
-participant Platform1 Client as A [fillcolor="orange"]
-participant Platform1 Front End as B [fillcolor="orange"]
-participant Platform1 Name Server as C [fillcolor="orange"]
-participant Authoritative Platform2 Name Server as D [fillcolor="orange"]
-participant Platform2 KDS as E [fillcolor="orange"]
+~~~plantuml-utxt
+participant "Platform1 Client" as A
+participant "Platform1 Front End" as B
+participant "Platform1 Name Server" as C
+participant "Authoritative Platform2 Name Server" as D
+participant "Platform2 KDS" as E
 
 C->D: Request Platform2 Name Records
 D->C: Replicate Platform2 Name Records
@@ -97,7 +96,6 @@ E-->A: Tunneled query result
 B->A: Return Public Key Bundle
 A->A: Encrypt Message
 ~~~
-
 
 Taking Platform1 client sending to a Platform2 user as an example:
 
@@ -124,12 +122,12 @@ This provides E2EE interop while only disclosing to gateway service which servic
 A similar architecture can be used for message delivery
 
 ~~~ plantuml-utxt
-participant Platform1 Client as A [fillcolor="orange"]
-participant Platform1 Front End as B [fillcolor="orange"]
-participant Platform1 Name Server as C [fillcolor="orange"]
-participant Authoritative Platform2 Name Server as D [fillcolor="orange"]
-participant Platform2 DS as E [fillcolor="orange"]
-participant Platform2 Client as F [fillcolor="orange"]
+participant "Platform1 Client" as A
+participant "Platform1 Front End" as B
+participant "Platform1 Name Server" as C
+participant "Authoritative Platform2 Name Server" as D
+participant "Platform2 DS" as E
+participant "Platform2 Client" as F
 
 C->D: Request Android Name Records
 D->C: Replicate Android Name Records
@@ -154,7 +152,7 @@ E->F: E2EE Message payload
 
 ## Resolver registration
 
-Each service is responsible for registering user enrollments with the resolver. 
+Each service is responsible for registering user enrollments with the resolver.
 
 
 ## Preferred service integrity
@@ -163,11 +161,11 @@ While the preferred service is public, the user should control its value/integri
 
 
 ~~~ plantuml-utxt
-participant Client as A [fillcolor="orange"]
-participant Matrix Bridge as B [fillcolor="orange"]
-participant Android Bridge as C [fillcolor="orange"]
-participant Whatsapp Bridge as D [fillcolor="orange"]
-participant Resolver as E [fillcolor="orange"]
+participant Client as A
+participant "Matrix Bridge" as B
+participant "Android Bridge" as C
+participant "Whatsapp Bridge" as D
+participant Resolver as E
 
 B->E: Register Preferred Service + Signature
 A->E: Query PN/UserID
@@ -184,7 +182,7 @@ Messaging interoperability introduces a new problem that traditionally has been 
 
 As a result, a user may be registered at multiple services with the same handles, e.g. if Bob’s email is [bob@example.com](mailto:bob@example.com) and his phone number is 555-111-2222 and he’s registered with Signal and iMessage, he would be addressable at [bob@example.com](mailto:bob@example.com):iMessage, 555-111-2222:iMessage, and 555-111-2222:Signal. In this case, the same userId on iMessage and Signal is acceptable as the phone number can map to only one individual who proves their identity by validating ownership of the SIM card.
 
-On services where a user can log in with a username _alone_, however e.g. Threema and FooService, the challenge becomes: 
+On services where a user can log in with a username _alone_, however e.g. Threema and FooService, the challenge becomes:
 
 
 *   Alice messages Bob at Bob's preferred service (bob@Threema)
@@ -192,7 +190,6 @@ On services where a user can log in with a username _alone_, however e.g. Threem
 *   Alice needs some indicator or UI to know that bob@Threema isn't bob@FooSercice and that when bob@FooService messages, it should not be assumed that bob@FooService is bob@Threema.
 
 One way to solve this would be storing the supported services for a contact in Contacts and if a receipt receives a message from an unknown sender, to treat it as spam or otherwise untrusted from the start.
-
 
 # Privacy of resolver lookup queries
 
@@ -204,7 +201,6 @@ A private information retrieval protocol enables a client holding an index (or k
 
 Google [framework](https://www.usenix.org/conference/usenixsecurity23/presentation/patel) for Public Key PIR can be wrapped around any standard lattice-based PIR scheme. This framework consists of server database setup, client key initialization, client query generation, server response computation, and client response decryption sub-protocols.
 
-   
 
 ### Server database setup
 
@@ -268,7 +264,6 @@ This offline protocol is completed by the server before answering any client que
 *   The end result is a ciphertext **r** of the database value corresponding to **k**. The server sends **r** back to the client.
 
  
-
 ### Client response decryption
 
 
