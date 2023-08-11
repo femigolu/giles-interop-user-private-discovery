@@ -78,7 +78,25 @@ Hiding service reachability. All major E2EE messaging services already publish u
 ## Key distribution
 
 
-![alt_text](images/key_distribution.png "Key distribution"){:height="838px" width="396px"}
+~~~ plantuml-utxt
+participant Platform1 Client as A [fillcolor="orange"]
+participant Platform1 Front End as B [fillcolor="orange"]
+participant Platform1 Name Server as C [fillcolor="orange"]
+participant Authoritative Platform2 Name Server as D [fillcolor="orange"]
+participant Platform2 KDS as E [fillcolor="orange"]
+
+C->D: Request Platform2 Name Records
+D->C: Replicate Platform2 Name Records
+A->B: PIR Query PN/UserID
+B->C: PIR Query PN/UserID
+C->B: Supported service IDs + default service
+A-->E: Tunneled KDS query
+B->E: Query PN/UserID
+E->B: Return Public Key Bundle
+E-->A: Tunneled query result
+B->A: Return Public Key Bundle
+A->A: Encrypt Message
+~~~
 
 
 Taking Platform1 client sending to a Platform2 user as an example:
@@ -105,7 +123,24 @@ This provides E2EE interop while only disclosing to gateway service which servic
 
 A similar architecture can be used for message delivery
 
-![alt_text](images/message_delivery.png "message delivery"){:height="1331px" width="414px"}
+~~~ plantuml-utxt
+participant Platform1 Client as A [fillcolor="orange"]
+participant Platform1 Front End as B [fillcolor="orange"]
+participant Platform1 Name Server as C [fillcolor="orange"]
+participant Authoritative Platform2 Name Server as D [fillcolor="orange"]
+participant Platform2 DS as E [fillcolor="orange"]
+participant Platform2 Client as F [fillcolor="orange"]
+
+C->D: Request Android Name Records
+D->C: Replicate Android Name Records
+A->B: E2EE Message payload + PIR encrypted PN/UserID
+B->C: PIR Query PN/UserID
+C->B: Supported service IDs + default service
+A-->E: Tunneled Recipient Phone Number
+A-->F: Tunneled Sender PN/UserID
+B->E: E2EE Message payload
+E->F: E2EE Message payload
+~~~
 
 
 1. Platform1 name server replicates authoritative Platform2 NS records
@@ -127,7 +162,18 @@ Each service is responsible for registering user enrollments with the resolver.
 While the preferred service is public, the user should control its value/integrity. Therefore to prevent anyone but the user modifying the default service value, records must be signed with the user’s private key and verified by the sender against their public key. For multiple key pairs across different services, the first key pair to sign the default service bit must be used to change the default.
 
 
-![alt_text](images/preferred_svc_integrity.png "Preferred service integrity"){:height="1005px" width="396px"}
+~~~ plantuml-utxt
+participant Client as A [fillcolor="orange"]
+participant Matrix Bridge as B [fillcolor="orange"]
+participant Android Bridge as C [fillcolor="orange"]
+participant Whatsapp Bridge as D [fillcolor="orange"]
+participant Resolver as E [fillcolor="orange"]
+
+B->E: Register Preferred Service + Signature
+A->E: Query PN/UserID
+E->A: Return supported service IDs + default service preference + signature
+A->A: Verify default service pref signature
+~~~
 
 
 ## Cross-service identity spoofing
