@@ -201,7 +201,7 @@ One way to solve this would be storing the supported services for a contact in C
 
 # Privacy of resolver lookup queries
 
-Resolver lookup queries leak the user's social graph - i.e. who is communicating with whom, since the IP address of the querying client can be tied to user identity, especially when operating over a mobile data network. Therefore we propose to use Private Information Retrieval (PIR) to perform the resolver queries. We have evaluated multiple alternative schemes. The proposed solution is based on a Public Key PIR framework, such as {{PIRFramework}} with sharded databases. This framework is applicable with any standard PIR scheme such as the open source implementation [here](https://github.com/google/private-retrieval). Cost estimates suggest this is feasible even for very large resolver databases (10 billion records).
+Resolver lookup queries leak the user's social graph - i.e. who is communicating with whom, since the IP address of the querying client can be tied to user identity, especially when operating over a mobile data network. Therefore we propose to use Private Information Retrieval (PIR) to perform the resolver queries. We have evaluated multiple alternative schemes. The proposed solution is based on the Public Key PIR framework by Patel et al{{PIRFramework}} with sharded databases. This framework is applicable with any standard PIR scheme such as the open source implementation [here](https://github.com/google/private-retrieval). Cost estimates suggest this is feasible even for very large resolver databases (10 billion records).
 
 ## Proposed protocols
 
