@@ -56,31 +56,31 @@ This document specifies how users can find and communicate with each other priva
 
 {::boilerplate bcp14-tagged}
 
-# Glossary
+# c
 This section provides a glossary of key terms.
 
-- ​​Domain Name Service: A system that accepts domain names and returns their IP addresses.
-- DNS: See Domain Name Service.
-- Resolver: A service that helps clients find the IP address for a domain through recursive queries over Name Servers hierarchy.
 - Authoritative Name Server: Final holder of the IP addresses for a specific domain or set of domains.
-- Name Server: Stores DNS records that map a domain name to an IP address.
-- Private Information Retrieval: A cryptographic technique that allows a client to query a database server without the server being able to learn anything about the query or the record retrieved.
-- PIR: See Private Information Retrieval
+- Client: A software application running on a user's device or computer.
+- Database: A collection of records all of equal sizes (i.e., padded as appropriate).
+- Dense PIR: A type of PIR scheme that is used to retrieve information from a database using the index or position of each record as key. This is equivalent to the standard PIR schemes from the literature.
+- DNS: See Domain Name Service.
+- ​​Domain Name Service: A system that accepts domain names and returns their IP addresses.
+- FHE: See Fully Homomorphic Encryption.
+- Fully Homomorphic Encryption: A type of encryption that allows arithmetic operations to be performed on encrypted data without decrypting it first.
+- KDS Resolver: A service that helps clients find and download the public keys of other users.
 - KDS: See Key Distribution Server.
 - Key Distribution Server: A server holding the public key material that enables a user to securely communicate with other users.
-- KDS Resolver: A service that helps clients find and download the public keys of other users.
-- Public Key Bundle: Cryptographic key and other metadata that are used to encrypt and decrypt messages.
-- Client: A software application running on a user's device or computer.
-- Preferred Service: A messaging service that a user has chosen as the default.
-- Shard: A subset of a large database that is divided into smaller, more manageable pieces.
+- Name Server: Stores DNS records that map a domain name to an IP address.
 - Partition: A smaller division of a shard that is used to facilitate recursion with PIR.
-- Transform: A process of converting the partitions in a shard into a format that is suitable for homomorphic encryption computations.
+- PIR: See Private Information Retrieval
+- Preferred Service: A messaging service that a user has chosen as the default.
+- Private Information Retrieval: A cryptographic technique that allows a client to query a database server without the server being able to learn anything about the query or the record retrieved.
+- Public Key Bundle: Cryptographic key and other metadata that are used to encrypt and decrypt messages.
 - Public Key PIR: A type of PIR scheme that uses a small amount of client storage to gain communication and computation efficiencies over multiple queries.
+- Resolver: A service that helps clients find the IP address for a domain through recursive queries over Name Servers hierarchy.
+- Shard: A subset of a large database that is divided into smaller, more manageable pieces.
 - Sparse PIR: A type of PIR scheme that is used to retrieve information from a database of key-value pairs. This is the same as Keyword PIR in the literature.
-- Dense PIR: A type of PIR scheme that is used to retrieve information from a database using the index or position of each record as key. This is equivalent to the standard PIR schemes from the literature.
-- Fully Homomorphic Encryption: A type of encryption that allows arithmetic operations to be performed on encrypted data without decrypting it first.
-- FHE: See Fully Homomorphic Encryption.
-- Database: A collection of records all of equal sizes (i.e., padded as appropriate).
+- Transform: A process of converting the partitions in a shard into a format that is suitable for homomorphic encryption computations.
 
 # Introduction
 
@@ -115,17 +115,17 @@ Hiding service reachability. All major E2EE messaging services already publish u
 ## Key distribution
 
 ~~~plantuml-utxt
-participant "Platform1 Client" as A
-participant "Platform1 Front End" as B
-participant "Platform1 Name Server" as C
-participant "Authoritative Platform2 Name Server" as D
-participant "Platform2 KDS" as E
+participant "Platform1\n Client" as A
+participant "Platform1\n Front End" as B
+participant "Platform1\n Name Server" as C
+participant "Authoritative Platform2\n Name Server" as D
+participant "Platform2\n KDS" as E
 
-C->D: Request Platform2 Name Records
-D->C: Replicate Platform2 Name Records
+C->D: Request P2 Name Records
+D->C: Replicate P2 Name Records
 A->B: PIR Query PN/UserID
 B->C: PIR Query PN/UserID
-C->B: Supported service IDs + default service
+C->B: Supported service IDs&default service
 A-->E: Tunneled KDS query
 B->E: Query PN/UserID
 E->B: Return Public Key Bundle
@@ -147,7 +147,7 @@ Taking Platform1 client sending to a Platform2 user as an example:
 
 *   4.1 Platform1 Client makes a tunneled KDS query to the Android KDS. Platform1 Client first sends (query and session key) encrypted with Platform2 public key to Platform1 FE.
 *   4.2 Platform1 FE sends encrypted query to Platform2 KDS
-*   4.3 Platform2 KDS decrypts query and session key, encrypts response w/ session key
+*   4.3 Platform2 KDS decrypts query and session key, encrypts response with session key
 *   4.4 Platform2 KDS sends encrypted response to Platform1 FE
 *   4.5 Platform1 FE forwards to Platform1 client
 
@@ -159,19 +159,19 @@ This provides E2EE interop while only disclosing to gateway service which servic
 A similar architecture can be used for message delivery
 
 ~~~ plantuml-utxt
-participant "Platform1 Client" as A
-participant "Platform1 Front End" as B
-participant "Platform1 Name Server" as C
-participant "Authoritative Platform2 Name Server" as D
-participant "Platform2 DS" as E
-participant "Platform2 Client" as F
+participant "Platform1\n Client" as A
+participant "Platform1\n Front End" as B
+participant "Platform1\n Name Server" as C
+participant "Authoritative Platform2\n Name Server" as D
+participant "Platform2\n DS" as E
+participant "Platform2\n Client" as F
 
-C->D: Request Android Name Records
-D->C: Replicate Android Name Records
-A->B: E2EE Message payload + PIR encrypted PN/UserID
+C->D: Request P2 Name Records
+D->C: Replicate P2 Name Records
+A->B: Message and PIR payload
 B->C: PIR Query PN/UserID
-C->B: Supported service IDs + default service
-A-->E: Tunneled Recipient Phone Number
+C->B: Supported service IDs\n & default service
+A-->E: Tunneled Recipient PN
 A-->F: Tunneled Sender PN/UserID
 B->E: E2EE Message payload
 E->F: E2EE Message payload
@@ -200,11 +200,11 @@ While the preferred service is public, the user should control its value/integri
 ~~~ plantuml-utxt
 participant Client as A
 participant "Matrix Bridge" as B
-participant "Android Bridge" as C
-participant "Whatsapp Bridge" as D
+participant "Platform1 Bridge" as C
+participant "Platform2 Bridge" as D
 participant Resolver as E
 
-B->E: Register Preferred Service + Signature
+B->E: Register Preferred\n Service + Signature
 A->E: Query PN/UserID
 E->A: Return supported service IDs + default service preference + signature
 A->A: Verify default service pref signature
