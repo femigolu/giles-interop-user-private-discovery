@@ -56,7 +56,7 @@ This document specifies how users can find and communicate with each other priva
 
 {::boilerplate bcp14-tagged}
 
-# c
+# Glossary
 This section provides a glossary of key terms.
 
 - Authoritative Name Server: Final holder of the IP addresses for a specific domain or set of domains.
