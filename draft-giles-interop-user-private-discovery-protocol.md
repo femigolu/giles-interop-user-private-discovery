@@ -1,8 +1,7 @@
 ---
-
 title: "Interoperable Private Identity Discovery for E2EE Messaging"
 abbrev: "E2EE Messaging Private User Discovery"
-category: info
+category: std
 
 docname: draft-giles-interop-user-private-discovery-protocol-latest
 submissiontype: IETF
@@ -21,7 +20,12 @@ venue:
   mail: mimi@ietf.org
   arch: https://mailarchive.ietf.org/arch/browse/mimi/
   github: femigolu/giles-interop-user-private-discovery
-  latest: https://femigolu.github.io/giles-interop-user-private-discovery/giles-interop-user-private-discovery-protocol.html
+  latest: https://datatracker.ietf.org/doc/giles-interop-user-private-discovery-protocol/
+
+stand_alone: yes
+smart_quotes: no
+pi: [toc, sortrefs, symrefs]
+
 author:
  -
     fullname: Giles Hogben
@@ -52,12 +56,11 @@ This document specifies how users can find and communicate with each other priva
 
 --- middle
 
-# Conventions and Definitions
+# Terminology
 
 {::boilerplate bcp14-tagged}
 
-# Glossary
-This section provides a glossary of key terms.
+Glossary of terms:
 
 - Authoritative Name Server: Final holder of the IP addresses for a specific domain or set of domains.
 - Client: A software application running on a user's device or computer.
@@ -114,23 +117,27 @@ Hiding service reachability. All major E2EE messaging services already publish u
 
 ## Key distribution
 
-~~~plantuml-utxt
-participant "Platform1\n Client" as A
-participant "Platform1\n Front End" as B
-participant "Platform1\n Name Server" as C
-participant "Authoritative Platform2\n Name Server" as D
-participant "Platform2\n KDS" as E
+~~~ plantuml-utxt
+participant "P1\n Client" as A
+participant "P1\n Front End" as B
+participant "P1\n Name Server" as C
+participant "Authoritative P2\nName Server" as D
+participant "P2\n KDS" as E
 
-C->D: Request P2 Name Records
-D->C: Replicate P2 Name Records
-A->B: PIR Query PN/UserID
-B->C: PIR Query PN/UserID
-C->B: Supported service IDs&default service
-A-->E: Tunneled KDS query
-B->E: Query PN/UserID
-E->B: Return Public Key Bundle
-E-->A: Tunneled query result
-B->A: Return Public Key Bundle
+C->D: Request P2\nName Records
+D->C: Replicate P2\nName Records
+A->B: PIR Query\nPN/UserID
+B->C: PIR Query\nPN/UserID
+note over C, B
+  Supported service IDs
+   + default service
+end note
+C->B: Service IDs\n& default service
+A-->E: Tunneled\nKDS query
+B->E: Query\nPN/UserID
+E->B: Return Public\nKey Bundle
+E-->A: Tunneled\nquery result
+B->A: Return Public\nKey Bundle
 A->A: Encrypt Message
 ~~~
 
@@ -143,7 +150,7 @@ Taking Platform1 client sending to a Platform2 user as an example:
 
 3. Platform1 FE gets supported key distribution service IDs, version number + default service=Platform2 via PIR protocol from its own name server.
 
-4. Platform1 FE queries Platform2 KDS to retrieve public keys. [^1]
+4. Platform1 FE queries Platform2 KDS to retrieve public keys.
 
 *   4.1 Platform1 Client makes a tunneled KDS query to the Android KDS. Platform1 Client first sends (query and session key) encrypted with Platform2 public key to Platform1 FE.
 *   4.2 Platform1 FE sends encrypted query to Platform2 KDS
@@ -159,22 +166,26 @@ This provides E2EE interop while only disclosing to gateway service which servic
 A similar architecture can be used for message delivery
 
 ~~~ plantuml-utxt
-participant "Platform1\n Client" as A
-participant "Platform1\n Front End" as B
-participant "Platform1\n Name Server" as C
-participant "Authoritative Platform2\n Name Server" as D
-participant "Platform2\n DS" as E
-participant "Platform2\n Client" as F
+participant "P1\nClient" as A
+participant "P1\nFront End" as B
+participant "P1\nName Server" as C
+participant "Authoritative P2\nName Server" as D
+participant "P2\nDS" as E
+participant "P2\nClient" as F
 
-C->D: Request P2 Name Records
-D->C: Replicate P2 Name Records
-A->B: Message and PIR payload
-B->C: PIR Query PN/UserID
-C->B: Supported service IDs\n & default service
-A-->E: Tunneled Recipient PN
-A-->F: Tunneled Sender PN/UserID
-B->E: E2EE Message payload
-E->F: E2EE Message payload
+C->D: Request P2\nName Records
+D->C: Replicate P2\nName Records
+A->B: Message and\nPIR payload
+B->C: PIR Query\nPN/UserID
+note over C, B
+  Supported service IDs
+   + default service
+end note
+C->B: Service IDs\n& default service
+A-->E: Tunneled\nRecipient PN
+A-->F: Tunneled Sender\nPN/UserID
+B->E: E2EE Message\npayload
+E->F: E2EE Message\npayload
 ~~~
 
 
@@ -199,14 +210,12 @@ While the preferred service is public, the user should control its value/integri
 
 ~~~ plantuml-utxt
 participant Client as A
-participant "Matrix Bridge" as B
-participant "Platform1 Bridge" as C
-participant "Platform2 Bridge" as D
-participant Resolver as E
+participant "Service UI" as B
+participant Resolver as C
 
-B->E: Register Preferred\n Service + Signature
-A->E: Query PN/UserID
-E->A: Return supported service IDs + default service preference + signature
+B->C: Register Preferred Service + Signature
+A->C: Query PN/UserID
+C->A: Return supported service IDs + default service preference + signature
 A->A: Verify default service pref signature
 ~~~
 
@@ -257,12 +266,12 @@ The Public Key PIR framework {{PIRFramework}} can be wrapped around any standard
 *   **Transform each shard**: Sample two hash keys **K<sub>2</sub>** and **K<sub>r</sub>** where **K<sub>2</sub>** will be used to generate a row vector within each partition, and **K<sub>r</sub>** is used to generate a representation for the transformed database as **F(K<sub>r</sub>,k<sub>i</sub>)\|\|v**.
 *   **N.B.** **F(K,k)** is the output value from hashing **k** with key **K** and **\|\|** is a concatenation.
 *   For each partition **P<sub>i</sub>**
-    *   Construct a **\P<sub>i</sub>\| x d<sub>1</sub>** Platform1 **M<sub>i</sub>** by appending a random row vector from the bit vector derived from **(F<sub>2</sub>(K<sub>2</sub>,k\|\|1),...,F<sub>2</sub>(K<sub>2</sub>,k\|\|d<sub>1</sub>))**.
+    *   Construct a **\|P<sub>i</sub>\| x d<sub>1</sub>** Platform1 **M<sub>i</sub>** by appending a random row vector from the bit vector derived from **(F<sub>2</sub>(K<sub>2</sub>,k\|\|1),...,F<sub>2</sub>(K<sub>2</sub>,k\|\|d<sub>1</sub>))**.
     *   Construct a **\|P<sub>i</sub>\|** vector **y<sub>i</sub>** by appending **F<sub>r</sub>(K<sub>r</sub>,k)\|\|v** for each **(k,v)** in **P<sub>i</sub>**.
     *   Solve for **e<sub>i</sub>** that satisfies **M<sub>i</sub>e<sub>i</sub> = y<sub>i</sub>**.
 *   Construct the transformed **d<sub>1</sub> x b** Platform1 as **E = [e<sub>1</sub> … e<sub>b</sub>]**.
 *   The Platform1 **E** is the transformed Platform1 for shard **D**.
-*   The clients must download parameters **(K<sub>1</sub>,K<sub>2</sub>,K<sub>r</sub>)** to query each shard, plus **K<sub>s</sub> **to inform the server of the target shard for a query**.**
+*   The clients must download parameters **(K<sub>1</sub>,K<sub>2</sub>,K<sub>r</sub>)** to query each shard, plus **K<sub>s</sub>** to inform the server of the target shard for a query.
 
 This protocol is completed by the server without any client participation and before answering any client query. Note that a shard must be re-transformed after an update. Shard transform only takes a few minutes.
 
@@ -287,7 +296,7 @@ This protocol is completed by the server without any client participation and be
 *   Select a standard PIR algorithm with server-supported implementation as the underlying PIR scheme.
 *   Compute **d = F<sub>s</sub>(K<sub>s</sub>,k)** to identify the shard to query.
 *   Compute **j = F<sub>1</sub>(K<sub>1</sub>,k)** to learn which partition contains the desired entry from the downloaded partition boundaries for the shard.
-*   Generate **z** vector **v** of length **d<sub>1</sub> , … , d<sub>z</sub>** . Compute a **d<sub>1</sub>**-length random bit vector **v<sub>1</sub>** from **(F<sub>2</sub>(K<sub>2</sub>,k\|\|1),...,F<sub>2</sub>(K<sub>2</sub>,k\|\|d<sub>1</sub>))**. Compute **v<sub>2</sub>** as a zero bit vector of **d<sub>2</sub>** length with only the bit set at **⌊j/⌈n/d<sub>1</sub>d<sub>2</sub>⌋**. Similarly compute **v<sub>3</sub> , … , v<sub>z</sub>**.
+*   Generate **z** vector **v** of length **d<sub>1</sub> , … , d<sub>z</sub>** . Compute a **d<sub>1</sub>**-length random bit vector **v<sub>1</sub>** from **(F<sub>2</sub>(K<sub>2</sub>,k\|\|1),...,F<sub>2</sub>(K<sub>2</sub>,k\|\|d<sub>1</sub>))**. Compute **v<sub>2</sub>** as a zero bit vector of **d<sub>2</sub>** length with only the bit set at **⌊j/⌈n/d<sub>1</sub>d<sub>2</sub>⌉⌋**. Similarly compute **v<sub>3</sub> , … , v<sub>z</sub>**.
 *   Finally use the underlying PIR scheme and the private key to encrypt the **z** vector **v.**
 *   Send **v, d** and the **UID** to the server.
 *   **N.B.** The dimension **d<sub>z</sub>** is typically small; a size of 2 or 4 works well.
@@ -342,10 +351,6 @@ Note on some assumptions for feasibility:
 
 
 ## Notes
-
-[^1]:
-
-Clients may cache service Ids + default service + keys for a given User ID; discussion and best practices of such caching will be discussed in a future document.
 
 
 # IANA Considerations
