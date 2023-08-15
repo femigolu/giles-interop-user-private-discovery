@@ -52,10 +52,39 @@ This document specifies how users can find and communicate with each other priva
 
 --- middle
 
+# Conventions and Definitions
+
+{::boilerplate bcp14-tagged}
+
+# Glossary
+This section provides a glossary of key terms.
+
+- ​​Domain Name Service: A system that accepts domain names and returns their IP addresses.
+- DNS: See Domain Name Service.
+- Resolver: A service that helps clients find the IP address for a domain through recursive queries over Name Servers hierarchy.
+- Authoritative Name Server: Final holder of the IP addresses for a specific domain or set of domains.
+- Name Server: Stores DNS records that map a domain name to an IP address.
+- Private Information Retrieval: A cryptographic technique that allows a client to query a database server without the server being able to learn anything about the query or the record retrieved.
+- PIR: See Private Information Retrieval
+- KDS: See Key Distribution Server.
+- Key Distribution Server: A server holding the public key material that enables a user to securely communicate with other users.
+- KDS Resolver: A service that helps clients find and download the public keys of other users.
+- Public Key Bundle: Cryptographic key and other metadata that are used to encrypt and decrypt messages.
+- Client: A software application running on a user's device or computer.
+- Preferred Service: A messaging service that a user has chosen as the default.
+- Shard: A subset of a large database that is divided into smaller, more manageable pieces.
+- Partition: A smaller division of a shard that is used to facilitate recursion with PIR.
+- Transform: A process of converting the partitions in a shard into a format that is suitable for homomorphic encryption computations.
+- Public Key PIR: A type of PIR scheme that uses a small amount of client storage to gain communication and computation efficiencies over multiple queries.
+- Sparse PIR: A type of PIR scheme that is used to retrieve information from a database of key-value pairs. This is the same as Keyword PIR in the literature.
+- Dense PIR: A type of PIR scheme that is used to retrieve information from a database using the index or position of each record as key. This is equivalent to the standard PIR schemes from the literature.
+- Fully Homomorphic Encryption: A type of encryption that allows arithmetic operations to be performed on encrypted data without decrypting it first.
+- FHE: See Fully Homomorphic Encryption.
+- Database: A collection of records all of equal sizes (i.e., padded as appropriate).
+
 # Introduction
 
 Outline of design for message delivery bridge and key distribution server discovery mechanisms for interoperable E2EE messaging clients. A DNS-like resolver service stores UserID <-> service pairs that map to key distribution and message delivery endpoints (e.g. Platform1 Bridges).  Each service is responsible for an "authoritative name server" that covers its own users and this can be replicated/cached by other providers and retrieved by sender clients using a privacy preserving protocol to prevent social graph leakage.
-
 
 ## Functional Requirements
 
@@ -317,12 +346,6 @@ Note on some assumptions for feasibility:
 [^1]:
 
 Clients may cache service Ids + default service + keys for a given User ID; discussion and best practices of such caching will be discussed in a future document.
-
-
-# Conventions and Definitions
-
-{::boilerplate bcp14-tagged}
-
 
 
 # IANA Considerations
