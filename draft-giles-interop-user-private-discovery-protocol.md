@@ -101,11 +101,11 @@ For a given messaging service identity handle (Phone number or alphanumeric User
 
 ## Privacy Requirements
 
-* P0 Resolver service should not learn the PN/UserID a client is querying for (i.e. who is sending a message to who)
+1. P0 Resolver service should not learn the PN/UserID a client is querying for (i.e. who is sending a message to who)
 
-* P0 Resolver service should not learn the public identity of the querying client.
+2. P0 Resolver service should not learn the public identity of the querying client.
 
-* P0 Resolver service should not learn the exact timing of when a message is sent
+3. P0 Resolver service should not learn the exact timing of when a message is sent
 
 ## Privacy Non-requirement
 
@@ -123,6 +123,7 @@ participant "P1\n Front End" as B
 participant "P1\n Name Server" as C
 participant "Authoritative P2\nName Server" as D
 participant "P2\n KDS" as E
+participant "P2\nClient" as F
 
 C->D: Request P2\nName Records
 D->C: Replicate P2\nName Records
@@ -133,12 +134,11 @@ note over C, B
    + default service
 end note
 C->B: Service IDs\n& default service
-A-->E: Tunneled\nKDS query
 B->E: Query\nPN/UserID
 E->B: Return Public\nKey Bundle
-E-->A: Tunneled\nquery result
 B->A: Return Public\nKey Bundle
 A->A: Encrypt Message
+A->F: Send Encrypted Message via messaging providers
 ~~~
 
 Taking Platform1 client sending to a Platform2 user as an example:
@@ -152,51 +152,16 @@ Taking Platform1 client sending to a Platform2 user as an example:
 
 4. Platform1 FE queries Platform2 KDS to retrieve public keys.
 
-*   4.1 Platform1 Client makes a tunneled KDS query to the Android KDS. Platform1 Client first sends (query and session key) encrypted with Platform2 public key to Platform1 FE.
-*   4.2 Platform1 FE sends encrypted query to Platform2 KDS
-*   4.3 Platform2 KDS decrypts query and session key, encrypts response with session key
-*   4.4 Platform2 KDS sends encrypted response to Platform1 FE
-*   4.5 Platform1 FE forwards to Platform1 client
+  *   4.1 Platform1 Client first sends (query and session key) encrypted with Platform2 public key to Platform1 FE.
+  *   4.2 Platform1 FE sends encrypted query to Platform2 KDS
+  *   4.3 Platform2 KDS decrypts query and session key, encrypts response with session key
+  *   4.4 Platform2 KDS sends encrypted response to Platform1 FE
+  *   4.5 Platform1 FE forwards to Platform1 client
+
+{:start="5"}
+5. Platform 1 Client and Platform 2 Client exchange messages through their respective messaging providers.
 
 This provides E2EE interop while only disclosing to gateway service which services a phone number is registered to. In all other respects, gateway services learn no more information than in the non-interop case.
-
-
-## Message receipt/delivery
-
-A similar architecture can be used for message delivery
-
-~~~ plantuml-utxt
-participant "P1\nClient" as A
-participant "P1\nFront End" as B
-participant "P1\nName Server" as C
-participant "Authoritative P2\nName Server" as D
-participant "P2\nDS" as E
-participant "P2\nClient" as F
-
-C->D: Request P2\nName Records
-D->C: Replicate P2\nName Records
-A->B: Message and\nPIR payload
-B->C: PIR Query\nPN/UserID
-note over C, B
-  Supported service IDs
-   + default service
-end note
-C->B: Service IDs\n& default service
-A-->E: Tunneled\nRecipient PN
-A-->F: Tunneled Sender\nPN/UserID
-B->E: E2EE Message\npayload
-E->F: E2EE Message\npayload
-~~~
-
-
-1. Platform1 name server replicates authoritative Platform2 NS records
-2. Platform1 client sends E2EE message payload + PIR encrypted PN/UserID to Platform1 front end.
-3. Platform1 FE gets supported service IDs + version numbers + default service=Platform2 via PIR protocol. The version number ensures senders use compatible protocols in the case of changes.
-4. Platform1 client tunnels recipient phone number to Platform2 Delivery Service (encrypted with Platform2's pubkey)
-5. Platform1 client tunnels sender phone number to Platform2 client (using protocol similar to [Signal Sealed Sender](https://signal.org/blog/sealed-sender/))
-6. Platform1 FE sends message to Platform2 DS after verifying that the default service signature matches.
-7. Platform2 DS delivers message to Platform2 client.
-
 
 ## Resolver registration
 
@@ -205,7 +170,7 @@ Each service is responsible for registering user enrollments with the resolver.
 
 ## Preferred service integrity
 
-While the preferred service is public, the user should control its value/integrity. As well as ensuring user control, it also prevents spoofing attacks where an attacker A could create an account on a new service that B does not have an account on, and then set it to B's preferred service (see cross-service identity spoofing below). Therefore to prevent anyone but the user modifying the default service value, records must be signed with the user's private key and verified by the sender against their public key. For multiple key pairs across different services, the first key pair to sign the default service bit must be used to change the default.
+While the preferred service is public, the user should control its value/integrity. As well as ensuring user control, it also prevents spoofing attacks where an attacker A could create an account on a new service that B does not have an account on, and then set it to B's preferred service (see cross-service identity spoofing below). Therefore to prevent anyone but the user modifying the default service value, records must be signed with the user's private key and verified by the sender against their public key. For multiple key pairs across different services, the last key pair to sign the default service bit must be used to change the default.
 
 
 ~~~ plantuml-utxt
@@ -235,7 +200,9 @@ On services where a user can log in with a username _alone_, however e.g. Threem
 *   Eve messages Alice impersonating Bob using bob@FooService
 *   Alice needs some indicator or UI to know that bob@Threema isn't bob@FooSercice and that when bob@FooService messages, it should not be assumed that bob@FooService is bob@Threema.
 
-One way to solve this would be storing the supported services for a contact in Contacts and if a receipt receives a message from an unknown sender, to treat it as spam or otherwise untrusted from the start.
+Options for solving this are:
+1. Storing the supported services for a contact in Contacts and if a receipt receives a message from an unknown sender, to treat it as spam or otherwise untrusted from the start.
+2. Requiring the fully qualified username for services that rely on usernames only - e.g. bob@threema.com vs bob.
 
 # Privacy of resolver lookup queries
 
