@@ -212,7 +212,7 @@ Resolver lookup queries leak the user's social graph - i.e. who is communicating
 
 A private information retrieval protocol enables a client holding an index (or keyword) to retrieve the database record corresponding to that index from a remote server. PIR schemes have communication complexities sublinear in the database size and they provide access privacy for clients which precludes the server from being able to learn any information about either the query index or the record retrieved. A standard single-server PIR scheme provides clients with algorithms to generate a query and decrypt a response from the server. It also provides an algorithm for the server to compute a response.
 
-The Public Key PIR framework {{PIRFramework}} can be wrapped around any standard lattice-based PIR scheme. This framework consists of server database setup, client key initialization, client query generation, server response computation, and client response decryption sub-protocols.
+The Public Key PIR framework {{PIRFramework}} can be wrapped around any standard lattice-based PIR scheme. This framework consists of server database setup, client key initialization, client query generation, server response computation, and client response decryption sub-protocols. All operations are over a set of integers with a plaintext modulus.
 
 
 ### Server database setup
