@@ -1,9 +1,9 @@
 ---
 title: "Interoperable Private Identity Discovery for E2EE Messaging"
 abbrev: "E2EE Messaging Private User Discovery"
-category: std
+category: info
 
-docname: draft-giles-interop-user-private-discovery-protocol-latest
+docname: draft-giles-mimi-user-private-discovery-latest
 submissiontype: IETF
 number:
 date:
@@ -20,7 +20,7 @@ venue:
   mail: mimi@ietf.org
   arch: https://mailarchive.ietf.org/arch/browse/mimi/
   github: femigolu/giles-interop-user-private-discovery
-  latest: https://datatracker.ietf.org/doc/giles-interop-user-private-discovery-protocol/
+  latest: https://datatracker.ietf.org/doc/giles-interop-user-private-discovery/
 
 stand_alone: yes
 smart_quotes: no
