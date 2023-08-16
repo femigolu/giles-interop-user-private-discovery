@@ -2,10 +2,10 @@
 
 This is the working area for the individual Internet-Draft, "Interoperable Privacy Preserving User Identity and Discovery for E2EE Messaging".
 
-* [Editor's Copy](https://femigolu.github.io/giles-interop-user-private-discovery/draft-giles-mimi-user-private-discovery.html)
-* [Datatracker Page](https://datatracker.ietf.org/doc/draft-giles-mimi-user-private-discovery)
-* [Individual Draft](https://datatracker.ietf.org/doc/html/draft-giles-mimi-user-private-discovery)
-* [Compare Editor's Copy to Individual Draft](https://femigolu.github.io/giles-interop-user-private-discovery/#go.draft-giles-mimi-user-private-discovery.diff)
+* [Editor's Copy](https://femigolu.github.io/giles-interop-user-private-discovery/draft-party-mimi-user-private-discovery.html)
+* [Datatracker Page](https://datatracker.ietf.org/doc/draft-party-mimi-user-private-discovery)
+* [Individual Draft](https://datatracker.ietf.org/doc/html/draft-party-mimi-user-private-discovery)
+* [Compare Editor's Copy to Individual Draft](https://femigolu.github.io/giles-interop-user-private-discovery/#go.draft-party-mimi-user-private-discovery.diff)
 
 
 ## Contributing

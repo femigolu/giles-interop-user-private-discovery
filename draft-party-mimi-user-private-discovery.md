@@ -3,7 +3,7 @@ title: "Interoperable Private Identity Discovery for E2EE Messaging"
 abbrev: "E2EE Messaging Private User Discovery"
 category: info
 
-docname: draft-giles-mimi-user-private-discovery-latest
+docname: draft-party-mimi-user-private-discovery-latest
 submissiontype: IETF
 number:
 date:
@@ -51,7 +51,7 @@ informative:
 
 --- abstract
 
-This document specifies how users can find and communicate with each other privately when using end-to-end encryption messaging. Users can retrieve the key materials and message delivery endpoints of other users without revealing their social graphs to the key material service hosts. Users can search for phone numbers or user IDs, either individually or in batches, using private information retrieval (PIR). Our specification is based on the state-of-the-art lattice-based homomorphic PIR scheme, which provides a reasonable tradeoff between privacy and cost in a keyword-based sparse PIR setting.
+This document specifies how users can find each other privately when using end-to-end encrypted messaging services. Users can retrieve the key materials and message delivery endpoints of other users without revealing their social graphs to the key material service hosts. Users can search for phone numbers or user IDs, either individually or in batches, using private information retrieval (PIR). Our specification is based on a state-of-the-art lattice-based homomorphic PIR scheme, which provides a reasonable tradeoff between privacy and cost in a keyword-based sparse PIR setting.
 
 
 --- middle
