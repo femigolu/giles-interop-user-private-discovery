@@ -93,7 +93,7 @@ Outline of design for message delivery bridge and key distribution server discov
 
 For a given messaging service identity handle (phone number or alphanumeric UserID):
 
-1. **Endpoint discovery**: discover receiver service IDs to retrieve public key material and send message payload e.g. [Platform1.org/send/](matrix.org/send/), [Platform1.org/kds](matrix.org/kds) 
+1. **Endpoint discovery**: discover receiver service IDs to retrieve public key material and send message payload e.g. [Platform1.org/send/](matrix.org/send/), [Platform1.org/kds](matrix.org/kds)
 
 2. **Default service discovery**: Discover optional default receiver service ID user preference for a given PN/UserID (e.g. default:Platform1.org)
 
