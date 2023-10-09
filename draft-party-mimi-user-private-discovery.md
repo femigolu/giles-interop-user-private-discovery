@@ -91,26 +91,41 @@ Outline of design for message delivery bridge and key distribution server discov
 
 ## Functional Requirements
 
-For a given messaging service identity handle (Phone number or alphanumeric UserID):
+For a given messaging service identity handle (phone number or alphanumeric UserID):
 
+1. **Endpoint discovery**: discover receiver service IDs to retrieve public key material and send message payload e.g. [Platform1.org/send/](matrix.org/send/), [Platform1.org/kds](matrix.org/kds) 
 
-1. P0 Return receiver service ID to send message payload: can be mapped to endpoints for message delivery and key distribution using standard mechanism -> e.g. [Platform1.org/send/](matrix.org/send/), [Platform1.org/kds](matrix.org/kds)
+2. **Default service discovery**: Discover optional default receiver service ID user preference for a given PN/UserID (e.g. default:Platform1.org)
 
-2. P0 Return optional default receiver service ID user preference for a given PN/UserID (e.g. default:Platform1.org)
+3. **Global uniqueness**: Fully-qualified service identifiers should be globally unique
 
+4. **Key verification (P1)**: Provide an independently trusted party to assert and verify the association between a public key and a UserID
 
 ## Privacy Requirements
 
-1. P0 Resolver service should not learn the PN/UserID a client is querying for (i.e. who is sending a message to who)
+1. **Social graph**: Resolver or discovery services should not learn the PN/UserID a client is querying for (i.e. who is sending a message to who)
 
-2. P0 Resolver service should not learn the public identity of the querying client.
+2. **Querying user identity**: A resolver service should not default to sharing the querying user identity with other resolver services when it requires their help for discovery
 
-3. P0 Resolver service should not learn the exact timing of when a message is sent
+3. **Metadata**: Resolver service should not learn the exact timing of when a message is sent
 
-## Privacy Non-requirement
+## Other Non-functional Requirements
 
-Hiding service reachability. All major E2EE messaging services already publish unACL'd reachability information without opt-out i.e. +16501234567, reachable on Messages, Whatsapp, Telegram (not including name or any other info). Therefore this should not be a goal (and would not be feasible to implement).
+1. No single entity should be financially responsible for resolving all identity queries (e.g. even within a geographical region)
 
+2. Costs for each participating entity of storing and querying key records should be proportional to their number of participating users
+
+3. Performance should support each client querying each of their contacts at least once every 24 hours
+
+## Non-requirements
+
+1. **Hiding service reachability**: This is the link between a UserID and a service. All major E2EE messaging services already publish unACL'd reachability information without opt-out i.e. +16501234567, reachable on Messages, Whatsapp, Telegram (not including name or any other info). Therefore this should not be a goal (and would not be feasible to implement).
+
+2. **Hiding the value of UserIDs or public keys**: e.g. the existence of the PN, +16501234567
+
+3. **Hiding the association between a public key and a UserID**: e.g. PN +16501234567 has pubkey x
+
+4. **Contact lookup by name** (or anything except username)
 
 # Proposed solution
 
@@ -212,7 +227,7 @@ Resolver lookup queries leak the user's social graph - i.e. who is communicating
 
 A private information retrieval protocol enables a client holding an index (or keyword) to retrieve the database record corresponding to that index from a remote server. PIR schemes have communication complexities sublinear in the database size and they provide access privacy for clients which precludes the server from being able to learn any information about either the query index or the record retrieved. A standard single-server PIR scheme provides clients with algorithms to generate a query and decrypt a response from the server. It also provides an algorithm for the server to compute a response.
 
-The Public Key PIR framework {{PIRFramework}} can be wrapped around any standard lattice-based PIR scheme. This framework consists of server database setup, client key initialization, client query generation, server response computation, and client response decryption sub-protocols. All operations are over a set of integers with a plaintext modulus.
+The Public Key PIR framework {{PIRFramework}} can be wrapped around any standard lattice-based PIR scheme. This framework consists of server database setup, client key initialization, client query generation, server response computation, and client response decryption sub-protocols. All operations are over a set of integers with a plaintext modulus. The appendix provides the protocol messages in protocol buffer format.
 
 
 ### Server database setup
@@ -221,7 +236,7 @@ The Public Key PIR framework {{PIRFramework}} can be wrapped around any standard
 
 *   **Sharding**: If the database is over 2<sup>20</sup> records, sub-divide it into  shards of ~1 million unique records each, which is a good balance for privacy and costs. Performing PIR over the databases gives stronger privacy but is more costly. Similarly, running PIR queries over the shards is less costly but gives weaker privacy.
     *   Sample a hash key **K<sub>s</sub>** for sharding.
-    *   Using **K<sub>s</sub>**, shard the large database of **r** records into **⌈r/2<sup>20</sup>⌉** shards based on the hash prefix of the record's unique identifier.
+    *   Using **K<sub>s</sub>**, shard the large database of **r** records into **&rceil;r/2<sup>20</sup>&lceil;** shards based on the hash prefix of the record's unique identifier.
     *   **N.B.** The hash key will be provided to clients to determine the shard to query.
 *   **Set partitioning boundaries for each shard D**: Given a **n** key-value pairs shard **D = {(k<sub>1</sub>,v<sub>1</sub>),...,(k<sub>n</sub>,v<sub>n</sub>)}**, then
     *   Compute the number of database partitions as **b = n/d<sub>1</sub>**. Where **d<sub>1</sub>** is the desired size for each partition. A value of 128 for **d<sub>1</sub>** works well.
@@ -263,7 +278,7 @@ This protocol is completed by the server without any client participation and be
 *   Select a standard PIR algorithm with server-supported implementation as the underlying PIR scheme.
 *   Compute **d = F<sub>s</sub>(K<sub>s</sub>,k)** to identify the shard to query.
 *   Compute **j = F<sub>1</sub>(K<sub>1</sub>,k)** to learn which partition contains the desired entry from the downloaded partition boundaries for the shard.
-*   Generate **z** vector **v** of length **d<sub>1</sub> , … , d<sub>z</sub>** . Compute a **d<sub>1</sub>**-length random bit vector **v<sub>1</sub>** from **(F<sub>2</sub>(K<sub>2</sub>,k\|\|1),...,F<sub>2</sub>(K<sub>2</sub>,k\|\|d<sub>1</sub>))**. Compute **v<sub>2</sub>** as a zero bit vector of **d<sub>2</sub>** length with only the bit set at **⌊j/⌈n/d<sub>1</sub>d<sub>2</sub>⌉⌋**. Similarly compute **v<sub>3</sub> , … , v<sub>z</sub>**.
+*   Generate **z** vector **v** of length **d<sub>1</sub> , … , d<sub>z</sub>** . Compute a **d<sub>1</sub>**-length random bit vector **v<sub>1</sub>** from **(F<sub>2</sub>(K<sub>2</sub>,k\|\|1),...,F<sub>2</sub>(K<sub>2</sub>,k\|\|d<sub>1</sub>))**. Compute **v<sub>2</sub>** as a zero bit vector of **d<sub>2</sub>** length with only the bit set at **&lfloor;j/&rceil;n/d<sub>1</sub>d<sub>2</sub>&lceil;&rfloor;**. Similarly compute **v<sub>3</sub> , … , v<sub>z</sub>**.
 *   Finally use the underlying PIR scheme and the private key to encrypt the **z** vector **v.**
 *   Send **v, d** and the **UID** to the server.
 *   **N.B.** The dimension **d<sub>z</sub>** is typically small; a size of 2 or 4 works well.
@@ -273,8 +288,8 @@ This protocol is completed by the server without any client participation and be
 
 
 *   The server retrieves the public key for the client's **UID**, and computes the ciphertext of the value corresponding to the key of interest for the shard **d**, as follows.
-*   Take the transformed shard **E** as a **d<sub>1 </sub>x ⌈n/d<sub>1</sub>⌉** Platform1 **E<sub>1</sub>**, use the underlying PIR response answering algorithm to compute **v<sub>1</sub>.E<sub>1</sub>**, and rearrange the resulting **⌈n/d<sub>1</sub>⌉** vector as a **d<sub>2 </sub>x ⌈n/d<sub>1</sub>d<sub>2</sub>⌉** Platform1 **E<sub>2</sub>**.
-*   Next, compute **v<sub>2</sub>.E<sub>2</sub>**, and rearrange the resulting **⌈n/d<sub>1</sub>d<sub>2</sub>⌉** vector as a **d<sub>3 </sub>x ⌈n/d<sub>1</sub>d<sub>2</sub>d<sub>3</sub>⌉** Platform1 **E<sub>3</sub>**.
+*   Take the transformed shard **E** as a **d<sub>1 </sub>x &rceil;n/d<sub>1</sub>&lceil;** Platform1 **E<sub>1</sub>**, use the underlying PIR response answering algorithm to compute **v<sub>1</sub>.E<sub>1</sub>**, and rearrange the resulting **&rceil;n/d<sub>1</sub>&lceil;** vector as a **d<sub>2 </sub>x &rceil;n/d<sub>1</sub>d<sub>2</sub>&lceil;** Platform1 **E<sub>2</sub>**.
+*   Next, compute **v<sub>2</sub>.E<sub>2</sub>**, and rearrange the resulting **&rceil;n/d<sub>1</sub>d<sub>2</sub>&lceil;** vector as a **d<sub>3 </sub>x &rceil;n/d<sub>1</sub>d<sub>2</sub>d<sub>3</sub>&lceil;** Platform1 **E<sub>3</sub>**.
 *   The server similarly repeats the computation for the remaining dimensions **v<sub>3</sub> ,… , v<sub>z</sub>**.
 *   The end result is a ciphertext **r** of the database value corresponding to **k**. The server sends **r** back to the client.
 
@@ -324,6 +339,195 @@ Note on some assumptions for feasibility:
 
 This document has no IANA actions.
 
+## Appendix
+The protocol messages are specified in protobuffer format in this appendix.
+
+~~~protobuf
+syntax = "proto3";
+
+package mimi.discovery.pir;
+
+// PirParameterRequest represents a request from a client to a server to
+// fetch database and cryptographic parameters for querying a database.
+
+message PirParameterRequest {
+  // The protocol version for PIR.
+  uint32 protocol_version = 1;
+
+  // Used to prevent replays; request fingerprint.
+  string nonce = 2;
+
+  // The unique identifier of the client.
+  string uid = 3;
+
+  // The PIR scheme that the client wants to use.
+  PirScheme pir_scheme = 4;
+
+  // The public key of the client.
+  repeated bytes public_key = 5;
+}
+
+// PirParameterResponse represents a server's response to PirParameterRequest
+// and it contains database and cryptographic paramaters to use for quering the
+// database using PIR.
+
+message PirParameterResponse {
+  // The protocol version for PIR.
+  uint32 protocol_version = 1;
+
+  // Used to prevent replays; request fingerprint.
+  string nonce = 2;
+
+  // The unique identifier of the client.
+  string uid = 3;
+
+  // Status of the request.
+  PirStatus response_status = 4;
+
+  // The PIR scheme negotiated from the client request.
+  optional PirScheme pir_scheme = 5;
+
+  // A map of server-supported PIR schemes to their paramaeters.
+  map<PirScheme, PirParams> pir_schemes = 6;
+
+  // The shard hash key to identify subdatabase cointaining a keyword.
+  HashKey shard_key = 7;
+
+  // parameters for sub databases
+  repeated PirSubDbParameter sub_db_param = 8;
+}
+
+// PirSubDbParameter represents a subdatabase partitioning parameters
+
+message PirSubDbParameter {
+  // The hash key of the partition boundary.
+  HashKey partion_boundary_hash_key = 1;
+
+  // The hash key of the row vector.
+  HashKey row_vector_hash_key = 2;
+
+  // The hash key of the record representation.
+  HashKey record_representation_hash_key = 3;
+
+  // The beginning hash values for the partition
+  // boundaries for a single shard.
+  repeated PatitionBundaries partition_boundaries = 4;
+
+  // The size of the database.
+  uint32 database_size = 5;
+
+  // The size of the largest record.
+  uint32 record_size = 6;
+}
+
+// PirRequest represents a sparse PIR request to a server for retrieving a
+// database record.
+
+message PirRequest {
+  // The protocol version for PIR.
+  uint32 protocol_version = 1;
+
+  // Used to prevent replays; request fingerprint.
+  string nonce = 2;
+
+  // The unique identifier of the client.
+  string uid = 3;
+
+  // The PIR scheme that the client wants to use.
+  optional PirScheme pir_scheme = 4;
+
+  // The shard ID of the record to be retrieved.
+  uint32 shard = 5;
+
+  // The encrypted vector of the query.
+  repeated bytes encrypted_vector = 6;
+}
+
+// PirResponse represents a PIR server's response to a PirRequest.
+
+message PirResponse {
+  // The protocol version for PIR.
+  uint32 protocol_version = 1;
+
+  // Used to prevent replays; request fingerprint.
+  string nonce = 2;
+
+  // The unique identifier of the client.
+  string uid = 3;
+
+  // Status of the request.
+  PirStatus response_status = 4;
+
+  // The encrypted response.
+  repeated bytes encrypted_response = 5;
+}
+
+// PatitionBundaries represents the beginning hash values for the partition
+// boundaries for a single shard.
+
+message PatitionBundaries {
+  // The hash values of the partition boundaries.
+  repeated string boundary = 1;
+}
+
+// HashKey represents a cryptographic hash key.
+
+message HashKey {
+  // The hash key.
+  repeated bytes hash_key = 1;
+}
+
+// PirParams represents the paramaters of a PIR scheme instance.
+
+message PirParams {
+  // The number of levels of recursion used in the PIR scheme.
+  optional int32 levels_of_recursion = 1;
+
+  // The modulus used in the PIR scheme.
+  repeated bytes modulus = 2;
+
+  // The plaintext modulus used in the PIR scheme.
+  repeated bytes plaintext_modulus = 3;
+
+  // Other parameters used in the specific PIR scheme.
+  repeated bytes other_params = 4;
+
+  // Reserved values.
+  reserved 5, 6, 7;
+}
+
+// PirScheme represents an indexed-based PIR scheme .
+
+enum PirScheme {
+    // Scheme not specified
+    PIR_SCHEME_UNSPECIFIED = 0;
+
+    // XPIR scheme based on the Ring Learning with Errors (Ring-LWE) problem.
+    PIR_SCHEME_RLWE_XPIR = 1;
+
+    // Add more PIR schemes that we might want to support.
+}
+
+// PirStatus represents the PIR server response codes.
+
+enum PirStatus {
+  // The PIR scheme selected by the client is supported.
+  PIR_SCHEME_MATCHED = 0;
+
+  // The PIR scheme selected by the client is not supported, but the server
+  // suggests a list of supported schemes.
+  PIR_SCHEME_SUGGESTED = 1;
+
+  // There are problems with the request.
+  PIR_REQUEST_FAILURE = 2;
+
+  // The response was successfully computed from the request.
+  PIR_RESPONSE_SUCCESS = 3;
+
+  // The response computation failed.
+  PIR_RESPONSE_FAILURE = 4;
+}
+~~~
 
 --- back
 
