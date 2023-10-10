@@ -150,7 +150,7 @@ note over C, B
 end note
 C->B: Service IDs\n& default service
 B->E: Query\nPN/UserID
-E->B: Return Public\nKey Bundle
+E->B: Return Public Key Bundle\n(Signed by provider or 3P CA)
 B->A: Return Public\nKey Bundle
 A->A: Encrypt Message
 A->F: Send Encrypted Message via messaging providers
@@ -216,7 +216,7 @@ On services where a user can log in with a username _alone_, however e.g. Threem
 *   Alice needs some indicator or UI to know that bob@Threema isn't bob@FooSercice and that when bob@FooService messages, it should not be assumed that bob@FooService is bob@Threema.
 
 Options for solving this are:
-1. Storing the supported services for a contact in Contacts and if a receipt receives a message from an unknown sender, to treat it as spam or otherwise untrusted from the start.
+1. Storing the supported services for a contact in Contacts and if a recipient receives a message from an unknown sender, to treat it as spam or otherwise untrusted from the start.
 2. Requiring the fully qualified username for services that rely on usernames only - e.g. bob@threema.com vs bob.
 
 # Privacy of resolver lookup queries
@@ -368,7 +368,7 @@ message PirParameterRequest {
 }
 
 // PirParameterResponse represents a server's response to PirParameterRequest
-// and it contains database and cryptographic paramaters to use for quering the
+// and it contains database and cryptographic parameters to use for querying the
 // database using PIR.
 
 message PirParameterResponse {
@@ -387,10 +387,10 @@ message PirParameterResponse {
   // The PIR scheme negotiated from the client request.
   optional PirScheme pir_scheme = 5;
 
-  // A map of server-supported PIR schemes to their paramaeters.
+  // A map of server-supported PIR schemes to their parameters.
   map<PirScheme, PirParams> pir_schemes = 6;
 
-  // The shard hash key to identify subdatabase cointaining a keyword.
+  // The shard hash key to identify subdatabase containing a keyword.
   HashKey shard_key = 7;
 
   // parameters for sub databases
@@ -411,7 +411,7 @@ message PirSubDbParameter {
 
   // The beginning hash values for the partition
   // boundaries for a single shard.
-  repeated PatitionBundaries partition_boundaries = 4;
+  repeated PartitionBoundaries partition_boundaries = 4;
 
   // The size of the database.
   uint32 database_size = 5;
@@ -462,10 +462,10 @@ message PirResponse {
   repeated bytes encrypted_response = 5;
 }
 
-// PatitionBundaries represents the beginning hash values for the partition
+// PartitionBoundaries represents the beginning hash values for the partition
 // boundaries for a single shard.
 
-message PatitionBundaries {
+message PartitionBoundaries {
   // The hash values of the partition boundaries.
   repeated string boundary = 1;
 }
@@ -477,7 +477,7 @@ message HashKey {
   repeated bytes hash_key = 1;
 }
 
-// PirParams represents the paramaters of a PIR scheme instance.
+// PirParams represents the parameters of a PIR scheme instance.
 
 message PirParams {
   // The number of levels of recursion used in the PIR scheme.
@@ -499,13 +499,13 @@ message PirParams {
 // PirScheme represents an indexed-based PIR scheme .
 
 enum PirScheme {
-    // Scheme not specified
-    PIR_SCHEME_UNSPECIFIED = 0;
+  // Scheme not specified
+  PIR_SCHEME_UNSPECIFIED = 0;
 
-    // XPIR scheme based on the Ring Learning with Errors (Ring-LWE) problem.
-    PIR_SCHEME_RLWE_XPIR = 1;
+  // XPIR scheme based on the Ring Learning with Errors (Ring-LWE) problem.
+  PIR_SCHEME_RLWE_XPIR = 1;
 
-    // Add more PIR schemes that we might want to support.
+  // Add more PIR schemes that we might want to support.
 }
 
 // PirStatus represents the PIR server response codes.
