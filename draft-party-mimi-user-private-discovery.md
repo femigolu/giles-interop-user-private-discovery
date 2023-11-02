@@ -46,158 +46,208 @@ normative:
       Don't be Dense: Efficient Keyword PIR for Sparse Databases
     seriesinfo: 32nd USENIX Security Symposium, USENIX Security 2023
 
+  MIMI20231010:
+    author:
+      - fullname: Tim Geoghegan
+    title: >
+      Discovery requirements
+    seriesinfo: MIMI Virtual interim October 10, 2023
+
 informative:
 
 
 --- abstract
 
-This document specifies how users can find each other privately when using end-to-end encrypted messaging services. Users can retrieve the key materials and message delivery endpoints of other users without revealing their social graphs to the key material service hosts. Users can search for phone numbers or user IDs, either individually or in batches, using private information retrieval (PIR). Our specification is based on a state-of-the-art lattice-based homomorphic PIR scheme, which provides a reasonable tradeoff between privacy and cost in a keyword-based sparse PIR setting.
+This document specifies how users can privately discover each other's Service Specific  Identifiers (SSIs) when using end-to-end encrypted messaging services across multiple providers. Users can retrieve SSIs without revealing their social graphs to service providers they are not delivering messages through, using their phone numbers, email, user IDs, or other Service Independent Identifiers (SIIs). Our specification can be based on private information retrieval or associative private sets membership schemes, both of which provide reasonable tradeoffs between privacy and cost.
 
 
 --- middle
 
-# Terminology
+# Definitions
 
 {::boilerplate bcp14-tagged}
 
-Glossary of terms:
+A **service specific identifier** (SSI) is a unique identifier for a user within a single service provider's service, and encodes the service provider in the identifier. For example, a user's account handle and provider identifier is an SSI.
 
-- Authoritative Name Server: Final holder of the IP addresses for a specific domain or set of domains.
-- Client: A software application running on a user's device or computer.
-- Database: A collection of records all of equal sizes (i.e., padded as appropriate).
-- Dense PIR: A type of PIR scheme that is used to retrieve information from a database using the index or position of each record as key. This is equivalent to the standard PIR schemes from the literature.
-- DNS: See Domain Name Service.
-- ​​Domain Name Service: A system that accepts domain names and returns their IP addresses.
-- FHE: See Fully Homomorphic Encryption.
-- Fully Homomorphic Encryption: A type of encryption that allows arithmetic operations to be performed on encrypted data without decrypting it first.
-- KDS Resolver: A service that helps clients find and download the public keys of other users.
-- KDS: See Key Distribution Server.
-- Key Distribution Server: A server holding the public key material that enables a user to securely communicate with other users.
-- Name Server: Stores DNS records that map a domain name to an IP address.
-- Partition: A smaller division of a shard that is used to facilitate recursion with PIR.
-- PIR: See Private Information Retrieval
-- Preferred Service: A messaging service that a user has chosen as the default.
-- Private Information Retrieval: A cryptographic technique that allows a client to query a database server without the server being able to learn anything about the query or the record retrieved.
-- Public Key Bundle: Cryptographic key and other metadata that are used to encrypt and decrypt messages.
-- Public Key PIR: A type of PIR scheme that uses a small amount of client storage to gain communication and computation efficiencies over multiple queries.
-- Resolver: A service that helps clients find the IP address for a domain through recursive queries over Name Servers hierarchy.
-- Shard: A subset of a large database that is divided into smaller, more manageable pieces.
-- Sparse PIR: A type of PIR scheme that is used to retrieve information from a database of key-value pairs. This is the same as Keyword PIR in the literature.
-- Transform: A process of converting the partitions in a shard into a format that is suitable for homomorphic encryption computations.
-
-# Introduction
-
-Outline of design for message delivery bridge and key distribution server discovery mechanisms for interoperable E2EE messaging clients. A DNS-like resolver service stores UserID <-> service pairs that map to key distribution and message delivery endpoints (e.g. Platform1 Bridges).  Each service is responsible for an "authoritative name server" that covers its own users and this can be replicated/cached by other providers and retrieved by sender clients using a privacy preserving protocol to prevent social graph leakage.
-
-## Functional Requirements
-
-For a given messaging service identity handle (phone number or alphanumeric UserID):
-
-1. **Endpoint discovery**: discover receiver service IDs to retrieve public key material and send message payload e.g. [Platform1.org/send/](matrix.org/send/), [Platform1.org/kds](matrix.org/kds)
-
-2. **Default service discovery**: Discover optional default receiver service ID user preference for a given PN/UserID (e.g. default:Platform1.org)
-
-3. **Global uniqueness**: Fully-qualified service identifiers should be globally unique
-
-4. **Key verification (P1)**: Provide an independently trusted party to assert and verify the association between a public key and a UserID
-
-## Privacy Requirements
-
-1. **Social graph**: Resolver or discovery services should not learn the PN/UserID a client is querying for (i.e. who is sending a message to who)
-
-2. **Querying user identity**: A resolver service should not default to sharing the querying user identity with other resolver services when it requires their help for discovery
-
-3. **Metadata**: Resolver service should not learn the exact timing of when a message is sent
-
-## Other Non-functional Requirements
-
-1. No single entity should be financially responsible for resolving all identity queries (e.g. even within a geographical region)
-
-2. Costs for each participating entity of storing and querying key records should be proportional to their number of participating users
-
-3. Performance should support each client querying each of their contacts at least once every 24 hours
-
-## Non-requirements
-
-1. **Hiding service reachability**: This is the link between a UserID and a service. All major E2EE messaging services already publish unACL'd reachability information without opt-out i.e. +16501234567, reachable on Messages, Whatsapp, Telegram (not including name or any other info). Therefore this should not be a goal (and would not be feasible to implement).
-
-2. **Hiding the value of UserIDs or public keys**: e.g. the existence of the PN, +16501234567
-
-3. **Hiding the association between a public key and a UserID**: e.g. PN +16501234567 has pubkey x
-
-4. **Contact lookup by name** (or anything except username)
-
-# Proposed solution
+A **service independent identifier** (SII) is a unique identifier for a user that is independent of any specific service provider. For example, a user's E.164 phone number or email address are SIIs, since they can be used to identify the user across multiple different services.
 
 
-## Key distribution
+# Problem statement
 
-~~~ plantuml-utxt
-participant "P1\n Client" as A
-participant "P1\n Front End" as B
-participant "P1\n Name Server" as C
-participant "Authoritative P2\nName Server" as D
-participant "P2\n KDS" as E
-participant "P2\nClient" as F
-
-C->D: Request P2\nName Records
-D->C: Replicate P2\nName Records
-A->B: PIR Query\nPN/UserID
-B->C: PIR Query\nPN/UserID
-note over C, B
-  Supported service IDs
-   + default service
-end note
-C->B: Service IDs\n& default service
-B->E: Query\nPN/UserID
-E->B: Return Public Key Bundle\n(Signed by provider or 3P CA)
-B->A: Return Public\nKey Bundle
-A->A: Encrypt Message
-A->F: Send Encrypted Message via messaging providers
-~~~
-
-Taking Platform1 client sending to a Platform2 user as an example:
+The **discovery problem** is resolving a user's SII into one SSI for that user, while preserving user privacy in the process.
 
 
-1. Platform1 name server replicates authoritative Platform2 NS records. There will need to be a shared list of participating services and name server endpoints.
+# Threat actors
 
-2. Platform1 client sends key bundle request to Platform1 front end (PIR encrypted PN/UserID)
-
-3. Platform1 FE gets supported key distribution service IDs, version number + default service=Platform2 via PIR protocol from its own name server.
-
-4. Platform1 FE queries Platform2 KDS to retrieve public keys.
-
-  *   4.1 Platform1 Client first sends (query and session key) encrypted with Platform2 public key to Platform1 FE.
-  *   4.2 Platform1 FE sends encrypted query to Platform2 KDS
-  *   4.3 Platform2 KDS decrypts query and session key, encrypts response with session key
-  *   4.4 Platform2 KDS sends encrypted response to Platform1 FE
-  *   4.5 Platform1 FE forwards to Platform1 client
-
-{:start="5"}
-5. Platform 1 Client and Platform 2 Client exchange messages through their respective messaging providers.
-
-This provides E2EE interop while only disclosing to gateway service which services a phone number is registered to. In all other respects, gateway services learn no more information than in the non-interop case.
-
-## Resolver registration
-
-Each service is responsible for registering user enrollments with the resolver.
-
-
-## Preferred service integrity
-
-While the preferred service is public, the user should control its value/integrity. As well as ensuring user control, it also prevents spoofing attacks where an attacker A could create an account on a new service that B does not have an account on, and then set it to B's preferred service (see cross-service identity spoofing below). Therefore to prevent anyone but the user modifying the default service value, records must be signed with the user's private key and verified by the sender against their public key. For multiple key pairs across different services, the last key pair to sign the default service bit must be used to change the default.
+* Alice, Bob, and Carol: Three  users within the interoperable E2EE messaging ecosystem.
+* Sender Messaging Platform: A messaging service provider platform where a registered user has an account and has established a mapping of SII to SSI. Examples from Fig. is Platform 1 for Alice and Carol, and Platform 2 for Bob.
+* Potential Recipient Messaging Platform: A messaging service provider platform where a discovered SSI is registered. An example from Fig. 1 is the role of Platform 2 when Alice resolves Bob's SSI using Bob's SII. This has three variants in the threat model:
+  1. Recipient platform with SSI - the sender sends a message (so this platform will learn the sender identity).
+  2. Non-recipient platform with SSI that the recipient SII has an account with but does not send a message to.
+  3. Non-recipient platform without SSI - potential recipient does not have an SSI registered with this platform.
 
 
 ~~~ plantuml-utxt
-participant Client as A
-participant "Service UI" as B
-participant Resolver as C
+skinparam ranksep 2
+skinparam nodesep 2
 
-B->C: Register Preferred Service + Signature
-A->C: Query PN/UserID
-C->A: Return supported service IDs + default service preference + signature
-A->A: Verify default service pref signature
+actor Alice
+actor Carol
+rectangle "Sender Messaging Platform" as SMP {
+  node "Front End" as fe1
+  node "Discovery Provider" as dp1
+  node "Key Distribution Service" as kds1
+  database "Mappings DB Alice,Carol,..." as db1
+}
+fe1 --[hidden]> dp1
+dp1 --[hidden]> kds1
+kds1 --[hidden]> db1
+
+rectangle "Third Party Platform" as TPP {
+  node "Discovery Provider" as dp2
+  node "Key Distribution Service" as kds2
+  database "Mappings DB Bob,..." as db2
+}
+dp2 --[hidden]> kds2
+kds2 --[hidden]> db2
+
+rectangle "Potential Recipient\nMessaging Platform" as PRMP {
+  node "Front End" as fe3
+  node "Discovery Provider" as dp3
+  node "Key Distribution Service" as kds3
+  database "Mappings DB Bob,..." as db3
+}
+fe3 --[hidden]> dp3
+dp3 --[hidden]> kds3
+kds3 --[hidden]> db3
+
+actor Bob
+
 ~~~
+Figure 1: Threat actors and systems
+
+* Third Party Platform: A platform that provides discovery services but is not a messaging service provider. Bob might register with such a service directly, or such a service may act as a proxy for Messaging Platform 2 through contractual business agreement.
+* Front End: A service within a platform that receives users' requests and collaborates with other services to process them.
+* Discovery Provider: Works to resolve SII to SSI.
+* Key Distribution Service: Manages public key material of registered users.
+
+# Privacy requirements
+
+1. **Social graph**: Discovery service providers should not learn the SII or SSI a user is querying for unless they are sending or receiving a message on to that user.
+2. **Querying user identity**: A discovery service provider should not share the querying user identity with other discovery services when it requires their help for discovery.
+3. **Metadata**: Discovery service should not learn the exact timing of when a message is sent (after discovery).
+
+## Requirements by threat actor
+The following table describes the requirements to protect the privacy of an intended recipient's SSI during discovery broken down by the various threat actors. The possible list of services that may resolve a discovery request based on their knowledge of the SSI is shown in the first column. The second and third columns are the minimum and possible privacy requirements. The optimal privacy requirements assume that the two devices in E2EE messaging endpoints are on different messaging service platforms.
+
+Note that current messaging systems segment a user's social graph across their contacts' messaging services. Without proper privacy mitigations, a discovery process for the new interoperable ecosystem can enable an attacker to aggregate these fragments of the user's social graph across different services, violating their privacy. Performing the discovery process for contacts that are never used is common so that it is very likely that most clients will perform discovery for SII’s that they never send a message to. This is why we propose hiding the SII from the sender platform unless a message is sent. We believe this is possible technically because:
+
+1. Spam prevention requirements only apply to sent messages (standard IP based techniques can be used to prevent DDoS of the discovery service itself).
+2. Client costs for SII hiding mechanisms scale well enough with database size + number of services.
+
+
+
+|Service  |Minimum privacy requirements  |Optimal privacy  requirements|
+|Sender Platform  |Do not hide SSI  |Hide SSI|
+|Recipient Platform with SSI  |Do not hide SSI  |Do not hide SSI|
+|Non-recipient Platform with SSI  |Hide SSI  |Hide SSI|
+|Non-recipient Platform without SSI  |Hide SSI  |Hide SSI|
+|Third party service  |Hide SSI  |Hide SSI|
+
+Table 1: Discovery privacy requirements by threat actors
+
+
+# Privacy non-requirements
+
+1. **Hiding SII <> service mapping**: Hiding service reachability or the existence of a mapping between an SII and SSI for a service provider is an explicit non-goal. All major E2EE messaging services already publish unACL’d reachability information without opt-out i.e. +16501234567, reachable on Messages, Whatsapp, Telegram (not including name or any other info). Therefore this should not be a privacy goal (and would not be feasible to implement). **However it may be a business goal to prevent scraping of the full list of account-holders.**
+
+2. **Contact lookup by name** or anything except an SII.
+
+# Other Non-functional Requirements
+1. No single entity should be financially responsible for resolving all discovery queries (e.g. even within a geographical region).
+2. Costs for each participating entity of storing and resolving SII should be proportional to their number of participating users.
+3. Performance should support each client device resolving users' contact SIIs at least once every 24 hours.
+
+
+# SSI Discovery
+
+SSI discovery means retrieving the SSI that an SII maps to. There are two alternative cryptographic techniques to achieve the privacy properties for the retrieval:
+
+1. Private Information Retrieval (PIR)
+2. Private Set Membership (PSM)
+
+The discovery process is illustrated in Figure 2. Optionally, Alice’s client may encrypt the SSI of interest using PIR or PSM before forwarding the SII query to the Discovery Provider of the Sender Messaging Platform.
+
+The DP for the Sender Messaging Platform may either look up or compute an encrypted response directly, or it may forward the request to the Potential Recipient or Third Party Discovery Provider indicated by the provider identifier included in the request. Regardless of which party processes the request, a DP will compute an encrypted response and forward it back to Alice. Alice can then decrypt the encrypted response (if applicable) to obtain the SSI.
+
+Alice’s client may also optionally send the discovery request directly to a potential recipient or 3p DPs.
+
+We assume a fixed list of DPs for each SMP so that the client does not have to specify in the query request which DPs to use.
+
+~~~ plantuml-utxt
+
+participant Alice as A
+participant "Sender Messaging Platform\nDiscovery Provider" as B
+participant "Potential Recipient or Third \nParty Discovery Provider" as C
+
+A->A: 0. resolve SII
+A->B: 1. SII | Encrypted(SII)
+A-->C: 1b. SII | Encrypted(SII)
+B->B: 2. Lookup | Compute Response
+B-->C: 3. SII | Encrypted(SII)
+C-->C: 4. Lookup | Compute Response
+C-->B: 5. SSI | Encrypted(SSI)
+B->A: 6. SSI | Encrypted(SSI)
+A->A: 7. SSI | Decrypt Response =>SSI
+~~~
+
+Figure 2: Discovery with Sender Messaging Platform
+
+**Note:**
+* Note that the DPs should not learn that Alice is the author of the request.
+* Alice is not required to hide discovery requests when the processor DP is within the Sender Messaging Platform.
+* Alice’s client may, but is not required to hide discovery requests from Potential Recipient DPs. Both of these requests can be sent in the clear.
+
+## Private Information Retrieval (PIR)
+
+A PIR protocol enables a client holding an index (or keyword) to retrieve the database record corresponding to that index from a remote server. PIR schemes have communication complexities sublinear in the database size and they provide access privacy for clients which precludes the server from being able to learn any information about either the query index or the record retrieved. A standard single-server PIR scheme provides clients with algorithms to generate a query and decode a response from the server. It also provides an algorithm for the server to compute a response.
+
+We proposed a lattice-based PIR framework by Patel et al{{PIRFramework}}  with sharded databases. This framework is applicable with any standard PIR scheme such as the open source implementation [here](https://github.com/google/private-retrieval). Cost estimates suggest this is feasible even for a very large database with 10 billion records/mappings.
+
+### Cost estimates
+
+Use database shards each of ~1 million mappings. For 1.28 TB (10 billion records), breaking this down into 10,000 shards each of size 1 million records gives a cost estimate for each query as below:
+
+| Parameter/Metric                                         | Cost estimate     |
+|----------------------------------------------------------|-------------------|
+| Server Storage Per Device                                | 14 MB             |
+| Client Device Storage (for 10 billion records)           | 5 MB              |
+| Upload Bandwidth Per Query                               | 14 KB             |
+| Download Bandwidth Per Query                             | 21 KB             |
+| Client Time Per Query                                    | 0.1s              |
+| Server Time Per Query (Single Thread)                    | 0.8-1s            |
+
+
+
+## Private Set Membership (PSM)
+
+The discovery provider holds a set of SIIs that maps to an associated set of SSI. A PSM protocol enables a client with an SII to lean the associated SSI held by the server with the following privacy guarantees:
+
+1. The discovery provider does not learn the SII held by the client.
+2. The discovery provider does not learn whether a matching SII was found or not.
+3. The client does not learn any information about the other SIIs and associated SSIs held by the discovery provider.
+
+An open source implementation is available [here](https://github.com/google/private-membership).
+
+### Cost estimates
+
+For a database with 1.28 TB (10 billion associated records of SSI), using 1,000 shards each of size 10 million records, the cost estimate for each query is:
+
+| Parameter/Metric                                         | Cost estimate     |
+|----------------------------------------------------------|-------------------|
+| Communication                                            | 2.8 MB            |
+| Client Time Per Query                                    | 0.1s              |
+| Server Time Per Query (Single Thread)                    | 1-2s            |
 
 
 ## Cross-service identity spoofing
@@ -219,117 +269,61 @@ Options for solving this are:
 1. Storing the supported services for a contact in Contacts and if a recipient receives a message from an unknown sender, to treat it as spam or otherwise untrusted from the start.
 2. Requiring the fully qualified username for services that rely on usernames only - e.g. bob@threema.com vs bob.
 
-# Privacy of resolver lookup queries
 
-Resolver lookup queries leak the user's social graph - i.e. who is communicating with whom, since the IP address of the querying client can be tied to user identity, especially when operating over a mobile data network. Therefore we propose to use Private Information Retrieval (PIR) to perform the resolver queries. We have evaluated multiple alternative schemes. The proposed solution is based on the Public Key PIR framework by Patel et al{{PIRFramework}} with sharded databases. This framework is applicable with any standard PIR scheme such as the open source implementation [here](https://github.com/google/private-retrieval). Cost estimates suggest this is feasible even for very large resolver databases (10 billion records).
+# Thoughts on open questions from 10/10/2023 Interim Meeting{{MIMI20231010}}
 
-## Proposed protocols
+## Trusted Authorities for Mapping SIIs to SSIs
 
-A private information retrieval protocol enables a client holding an index (or keyword) to retrieve the database record corresponding to that index from a remote server. PIR schemes have communication complexities sublinear in the database size and they provide access privacy for clients which precludes the server from being able to learn any information about either the query index or the record retrieved. A standard single-server PIR scheme provides clients with algorithms to generate a query and decrypt a response from the server. It also provides an algorithm for the server to compute a response.
+_Which actors should be trusted authorities for mapping SIIs to SSIs?_
 
-The Public Key PIR framework {{PIRFramework}} can be wrapped around any standard lattice-based PIR scheme. This framework consists of server database setup, client key initialization, client query generation, server response computation, and client response decryption sub-protocols. All operations are over a set of integers with a plaintext modulus. The appendix provides the protocol messages in protocol buffer format.
+In general, this should be considered out of scope for this proposal, however we expect that by default, Messaging Service Providers (MSP) should be trusted authorities for creating these mapping. Users may "own" their SIIs, but messaging service providers own SSIs. MSP should verify ownership of SIIs (one time password code to phone via text or call, or to email).
 
+An MSP may share established mapping data with 3P discovery providers to facilitate lookups, or may delegate establishing new mappings to these providers under contractual agreements between them. Preferably, delegate discovery providers should be lookup providers only and should not create or update existing mappings unless the delegate is a reputable/trusted certification authority.
 
-### Server database setup
+If a 3p discovery service is used, it may also authenticate the mapping independently or it may act as a pass-through for a signed mapping by an MSP or another identity provider.
 
+SSL is sufficient to authenticate the mapping assertion.
 
+## Discovery Scaling
 
-*   **Sharding**: If the database is over 2<sup>20</sup> records, sub-divide it into  shards of ~1 million unique records each, which is a good balance for privacy and costs. Performing PIR over the databases gives stronger privacy but is more costly. Similarly, running PIR queries over the shards is less costly but gives weaker privacy.
-    *   Sample a hash key **K<sub>s</sub>** for sharding.
-    *   Using **K<sub>s</sub>**, shard the large database of **r** records into **&rceil;r/2<sup>20</sup>&lceil;** shards based on the hash prefix of the record's unique identifier.
-    *   **N.B.** The hash key will be provided to clients to determine the shard to query.
-*   **Set partitioning boundaries for each shard D**: Given a **n** key-value pairs shard **D = {(k<sub>1</sub>,v<sub>1</sub>),...,(k<sub>n</sub>,v<sub>n</sub>)}**, then
-    *   Compute the number of database partitions as **b = n/d<sub>1</sub>**. Where **d<sub>1</sub>** is the desired size for each partition. A value of 128 for **d<sub>1</sub>** works well.
-    *   Sample a partitioning boundary hash key **K<sub>1 </sub>** to generate a target partition for each shard key.
-    *   Compute the hash **F<sub>1</sub>(K<sub>1</sub>,k<sub>i</sub>)** for each record identifier **k<sub>i</sub>**.
-    *   Sort the hash values alphanumerically and then divide the list into **b** partitions **P<sub>1</sub>,...,P<sub>b</sub>**.
-    *   Store the b partition boundaries beginning hash values **B<sub>0</sub>, ..., B<sub>b</sub>**. Note that **B<sub>0</sub> = 0**, and **B<sub>b</sub> = \|U\|-1** where U is the rage for **F<sub>1</sub>(K<sub>1</sub>,k<sub>i</sub>)**.
-    *   **N.B.** The partition boundaries will be provided to clients and can be stored efficiently (e.g., ~11KB for **n** = 2<sup><strong>20</strong></sup>, **d<sub>1</sub>** = 128, **\|U\|** = 2<sup><strong>64</strong></sup>).
-*   **Transform each shard**: Sample two hash keys **K<sub>2</sub>** and **K<sub>r</sub>** where **K<sub>2</sub>** will be used to generate a row vector within each partition, and **K<sub>r</sub>** is used to generate a representation for the transformed database as **F(K<sub>r</sub>,k<sub>i</sub>)\|\|v**.
-*   **N.B.** **F(K,k)** is the output value from hashing **k** with key **K** and **\|\|** is a concatenation.
-*   For each partition **P<sub>i</sub>**
-    *   Construct a **\|P<sub>i</sub>\| x d<sub>1</sub>** Platform1 **M<sub>i</sub>** by appending a random row vector from the bit vector derived from **(F<sub>2</sub>(K<sub>2</sub>,k\|\|1),...,F<sub>2</sub>(K<sub>2</sub>,k\|\|d<sub>1</sub>))**.
-    *   Construct a **\|P<sub>i</sub>\|** vector **y<sub>i</sub>** by appending **F<sub>r</sub>(K<sub>r</sub>,k)\|\|v** for each **(k,v)** in **P<sub>i</sub>**.
-    *   Solve for **e<sub>i</sub>** that satisfies **M<sub>i</sub>e<sub>i</sub> = y<sub>i</sub>**.
-*   Construct the transformed **d<sub>1</sub> x b** Platform1 as **E = [e<sub>1</sub> … e<sub>b</sub>]**.
-*   The Platform1 **E** is the transformed Platform1 for shard **D**.
-*   The clients must download parameters **(K<sub>1</sub>,K<sub>2</sub>,K<sub>r</sub>)** to query each shard, plus **K<sub>s</sub>** to inform the server of the target shard for a query.
+_Does discovery need to scale to accommodate 10s, 100s, or 1000s of service?_
 
-This protocol is completed by the server without any client participation and before answering any client query. Note that a shard must be re-transformed after an update. Shard transform only takes a few minutes.
+A discovery request should be sent to a specific MSP or 3P discovery provider. It is up to those providers if they want to fan out the discovery to other providers or answer the discovery request from its own mapping only. It will be costly to fork out discovery requests to a large number of discovery providers while completely hiding the SSI from these providers.  We do not want forking to fit DDoS patterns on these services.
 
+However the protocols should be feasible (in terms of computation and communication cost) for 1000s of services.
 
-### Client key initialization
+## Acceptable leakage for discovery
 
+_What is it acceptable for queries to reveal about the social graph, and to whom?_
 
+A query should not reveal the SII in a user's query to discovery providers unless the discovery provider is also within the Sender's platform or the Recipient's platform with the SSI mapping. For an encrypted query and **since discovery precedes E2EE messaging**, a discovery provider won't be able to tell if the SSI maps to an SSI in its service. It is okay to take the no-leakage approach for all providers.
 
-*   The client generates a per-key unique identifier (**UID**),  **private key** and **public key** using a fully homomorphic encryption (FHE) scheme relying on hardness assumptions similar to Ring Learning with Errors problem.
-*   The client persists the **UID** and **private key** into its local key store, and uploads query-independent parameters **UID** and **public key** to the server. These later parameters will enable the server to perform cryptographic operations (i.e., FHE) efficiently.
-*   The server needs to maintain an up-to-date mapping of **UID** to **public key** for all clients.
-*   Each client completes this offline initialization protocol before running any query. It also needs to perform it periodically (e.g., weekly or monthly) to prevent server linkability of private queries to the user over an extended period.
-*   The client downloads query parameters from the server:
-    *   Sharding hash key **K<sub>s</sub>** to inform the server of the target shard for a query.
-*   Sets of parameters (**K<sub>1</sub>,K<sub>2</sub>,K<sub>r</sub>,B<sub>0</sub>, …, B<sub>b</sub>**) for each shard.
+Alice may use the different provider owning each SSI that her phone maps to. Bob may use different email addresses to map to multiple SSI with the same provider.
 
-### Client query generation
+Returning an SSI set of different cardinalities leaks information to a discovery provider about the likely sets of SSIs that are of interest for a query. A one-to-one mapping of SII to SSI does not leak such information. A discovery provider cannot tell when a privacy-preserving discovery returns an empty result or a single SII. However, it will be able to tell when a large number of SSIs are returned.
 
+## Rate Limiting
 
+_Is rate limiting useful to prevent scraping?_
 
-*   The client creates a query to retrieve the value corresponding to a database key **k** as follows:
-*   Select a standard PIR algorithm with server-supported implementation as the underlying PIR scheme.
-*   Compute **d = F<sub>s</sub>(K<sub>s</sub>,k)** to identify the shard to query.
-*   Compute **j = F<sub>1</sub>(K<sub>1</sub>,k)** to learn which partition contains the desired entry from the downloaded partition boundaries for the shard.
-*   Generate **z** vector **v** of length **d<sub>1</sub> , … , d<sub>z</sub>** . Compute a **d<sub>1</sub>**-length random bit vector **v<sub>1</sub>** from **(F<sub>2</sub>(K<sub>2</sub>,k\|\|1),...,F<sub>2</sub>(K<sub>2</sub>,k\|\|d<sub>1</sub>))**. Compute **v<sub>2</sub>** as a zero bit vector of **d<sub>2</sub>** length with only the bit set at **&lfloor;j/&rceil;n/d<sub>1</sub>d<sub>2</sub>&lceil;&rfloor;**. Similarly compute **v<sub>3</sub> , … , v<sub>z</sub>**.
-*   Finally use the underlying PIR scheme and the private key to encrypt the **z** vector **v.**
-*   Send **v, d** and the **UID** to the server.
-*   **N.B.** The dimension **d<sub>z</sub>** is typically small; a size of 2 or 4 works well.
+It is up to a discovery provider to rate-limit given the potential computational cost of responding to batch queries from a single user. Nonetheless, we should require that a user should be able to look up no less than 50 SII per discovery provider for each messaging provider in a given 24 hours period. Third party discovery providers are under obligation to messaging service providers and are excluded from the minimum discovery load per user.
 
-### Server response computation
+## SII Mappings
 
+_An SII may map to multiple SSIs. Should the requestor learn all of them, and if so, how?_
 
+* _One service that returns all SSIs for an SII?_
+* _Query each service provider independently?_
+* _User figures out out-of-band what service provider to query?_
 
-*   The server retrieves the public key for the client's **UID**, and computes the ciphertext of the value corresponding to the key of interest for the shard **d**, as follows.
-*   Take the transformed shard **E** as a **d<sub>1 </sub>x &rceil;n/d<sub>1</sub>&lceil;** Platform1 **E<sub>1</sub>**, use the underlying PIR response answering algorithm to compute **v<sub>1</sub>.E<sub>1</sub>**, and rearrange the resulting **&rceil;n/d<sub>1</sub>&lceil;** vector as a **d<sub>2 </sub>x &rceil;n/d<sub>1</sub>d<sub>2</sub>&lceil;** Platform1 **E<sub>2</sub>**.
-*   Next, compute **v<sub>2</sub>.E<sub>2</sub>**, and rearrange the resulting **&rceil;n/d<sub>1</sub>d<sub>2</sub>&lceil;** vector as a **d<sub>3 </sub>x &rceil;n/d<sub>1</sub>d<sub>2</sub>d<sub>3</sub>&lceil;** Platform1 **E<sub>3</sub>**.
-*   The server similarly repeats the computation for the remaining dimensions **v<sub>3</sub> ,… , v<sub>z</sub>**.
-*   The end result is a ciphertext **r** of the database value corresponding to **k**. The server sends **r** back to the client.
+SII mapping to multiple SSIs within a single provider
 
+1. This is a choice that MSPs will have to make, if they want to allow it.
+2. Having multiple SSIs per SII makes preserving the privacy of discovery more challenging because of the side channel leakage of response size. The tradeoff is acceptable if on the average users have multiple SSI with a MSP.
+3. For privacy reasons (i.e., protecting the association of multiple SSIs), the user may not want to group multiple SSIs together.
+4. We may devise a scheme where an SII could be suffixed with an index during registration and discovery of the SSI to retrieve from the set. For example, given an SII +1234567890, a user may map +12345678900 to the first Whatsapp SSI, and +1234567891 to the second Whatsapp SSI and so on.
 
-### Client response decryption
-
-
-
-*   The client uses the underlying PIR response decryption algorithm and **private key** to decrypt the response **r** as **k<sub>r</sub>\|\|v**. If **F<sub>r</sub>(K<sub>r</sub>,k) == k<sub>r</sub>** then returns **v** otherwise returns **null** (key not found).
-
-## FHE key requirements
-
-
-*   At least 128-bit of security
-      - ElGamal, NIST P-224r1 curve and a 4 bytes plaintext size for fast decryption.
-      - Gentry-Ramzan, used a 2048-bit modulus
-      - Damgård-Jurik, used 1160-bit primes
-
-## Cost estimates
-
-In these estimates, we propose using shards of size ~1 million of identifiers. For 1.28 TB (10 billion records), breaking this down into 10,000 shards each of size 1 million records gives a cost estimate for each query as below:
-
-
-| Parameter                                                | Cost estimate     |
-|----------------------------------------------------------|-------------------|
-| PIR Public Key Size Per Device, including metadata (storage required)    | 14 MB             |
-| Upload Bandwidth Per Query                               | 14 KB             |
-| Download Bandwidth Per Query                             | 21 KB             |
-| Client Time Per Query                                    | 0.1s              |
-| Server Time Per Query (Single Thread)                    | 0.8-1s            |
-
-
-
-Note on some assumptions for feasibility:
-
-
-
-1. Resolver queries will be cached (vs requiring a roundtrip for every message) and asynchronous with message sending, therefore 1s latency is acceptable.
-2. It is acceptable for key changes to be communicated reactively on decrypt failure.
-3. Group messaging E2EE is bootstrapped using individual users' public keys and for V1, group state will be stored by the initiating user's service provider. Therefore no additional discovery mechanism is required.
+The user should figure out out-of-band what discovery provider to query, and discovery providers should not be required to fork out discovery requests to other providers given the computational cost impact.
 
 
 ## Notes
@@ -340,194 +334,6 @@ Note on some assumptions for feasibility:
 This document has no IANA actions.
 
 ## Appendix
-The protocol messages are specified in protobuffer format in this appendix.
-
-~~~protobuf
-syntax = "proto3";
-
-package mimi.discovery.pir;
-
-// PirParameterRequest represents a request from a client to a server to
-// fetch database and cryptographic parameters for querying a database.
-
-message PirParameterRequest {
-  // The protocol version for PIR.
-  uint32 protocol_version = 1;
-
-  // Used to prevent replays; request fingerprint.
-  string nonce = 2;
-
-  // The unique identifier of the client.
-  string uid = 3;
-
-  // The PIR scheme that the client wants to use.
-  PirScheme pir_scheme = 4;
-
-  // The public key of the client.
-  repeated bytes public_key = 5;
-}
-
-// PirParameterResponse represents a server's response to PirParameterRequest
-// and it contains database and cryptographic parameters to use for querying the
-// database using PIR.
-
-message PirParameterResponse {
-  // The protocol version for PIR.
-  uint32 protocol_version = 1;
-
-  // Used to prevent replays; request fingerprint.
-  string nonce = 2;
-
-  // The unique identifier of the client.
-  string uid = 3;
-
-  // Status of the request.
-  PirStatus response_status = 4;
-
-  // The PIR scheme negotiated from the client request.
-  optional PirScheme pir_scheme = 5;
-
-  // A map of server-supported PIR schemes to their parameters.
-  map<PirScheme, PirParams> pir_schemes = 6;
-
-  // The shard hash key to identify subdatabase containing a keyword.
-  HashKey shard_key = 7;
-
-  // parameters for sub databases
-  repeated PirSubDbParameter sub_db_param = 8;
-}
-
-// PirSubDbParameter represents a subdatabase partitioning parameters
-
-message PirSubDbParameter {
-  // The hash key of the partition boundary.
-  HashKey partion_boundary_hash_key = 1;
-
-  // The hash key of the row vector.
-  HashKey row_vector_hash_key = 2;
-
-  // The hash key of the record representation.
-  HashKey record_representation_hash_key = 3;
-
-  // The beginning hash values for the partition
-  // boundaries for a single shard.
-  repeated PartitionBoundaries partition_boundaries = 4;
-
-  // The size of the database.
-  uint32 database_size = 5;
-
-  // The size of the largest record.
-  uint32 record_size = 6;
-}
-
-// PirRequest represents a sparse PIR request to a server for retrieving a
-// database record.
-
-message PirRequest {
-  // The protocol version for PIR.
-  uint32 protocol_version = 1;
-
-  // Used to prevent replays; request fingerprint.
-  string nonce = 2;
-
-  // The unique identifier of the client.
-  string uid = 3;
-
-  // The PIR scheme that the client wants to use.
-  optional PirScheme pir_scheme = 4;
-
-  // The shard ID of the record to be retrieved.
-  uint32 shard = 5;
-
-  // The encrypted vector of the query.
-  repeated bytes encrypted_vector = 6;
-}
-
-// PirResponse represents a PIR server's response to a PirRequest.
-
-message PirResponse {
-  // The protocol version for PIR.
-  uint32 protocol_version = 1;
-
-  // Used to prevent replays; request fingerprint.
-  string nonce = 2;
-
-  // The unique identifier of the client.
-  string uid = 3;
-
-  // Status of the request.
-  PirStatus response_status = 4;
-
-  // The encrypted response.
-  repeated bytes encrypted_response = 5;
-}
-
-// PartitionBoundaries represents the beginning hash values for the partition
-// boundaries for a single shard.
-
-message PartitionBoundaries {
-  // The hash values of the partition boundaries.
-  repeated string boundary = 1;
-}
-
-// HashKey represents a cryptographic hash key.
-
-message HashKey {
-  // The hash key.
-  repeated bytes hash_key = 1;
-}
-
-// PirParams represents the parameters of a PIR scheme instance.
-
-message PirParams {
-  // The number of levels of recursion used in the PIR scheme.
-  optional int32 levels_of_recursion = 1;
-
-  // The modulus used in the PIR scheme.
-  repeated bytes modulus = 2;
-
-  // The plaintext modulus used in the PIR scheme.
-  repeated bytes plaintext_modulus = 3;
-
-  // Other parameters used in the specific PIR scheme.
-  repeated bytes other_params = 4;
-
-  // Reserved values.
-  reserved 5, 6, 7;
-}
-
-// PirScheme represents an indexed-based PIR scheme .
-
-enum PirScheme {
-  // Scheme not specified
-  PIR_SCHEME_UNSPECIFIED = 0;
-
-  // XPIR scheme based on the Ring Learning with Errors (Ring-LWE) problem.
-  PIR_SCHEME_RLWE_XPIR = 1;
-
-  // Add more PIR schemes that we might want to support.
-}
-
-// PirStatus represents the PIR server response codes.
-
-enum PirStatus {
-  // The PIR scheme selected by the client is supported.
-  PIR_SCHEME_MATCHED = 0;
-
-  // The PIR scheme selected by the client is not supported, but the server
-  // suggests a list of supported schemes.
-  PIR_SCHEME_SUGGESTED = 1;
-
-  // There are problems with the request.
-  PIR_REQUEST_FAILURE = 2;
-
-  // The response was successfully computed from the request.
-  PIR_RESPONSE_SUCCESS = 3;
-
-  // The response computation failed.
-  PIR_RESPONSE_FAILURE = 4;
-}
-~~~
 
 --- back
 
